@@ -1,0 +1,21 @@
+let keyCode = {
+    // "w":"KeyW",
+    // "a":"KeyA",
+    // "s":"KeyS",
+    // "d":"KeyD",
+    // "j":"KeyJ",
+    // "k":"KeyK",
+    // "l":"KeyL",
+    // "i":"KeyI",
+    // "esc":"Escape",
+    "w":"w",
+    "a":"a",
+    "s":"s",
+    "d":"d",
+    "j":"j",
+    "k":"k",
+    "l":"l",
+    "i":"KeyI",
+    "esc":"Escape",
+}
+export default keyCode
