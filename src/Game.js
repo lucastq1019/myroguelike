@@ -3,65 +3,83 @@ import MainScene from "./Scene/impl/MainScene";
 
 class Game {
     constructor() {
-        this.initCanvas()
-        this.initEvent()
-        this.startScene = new StartScene(this)
-        this.mainScene = new MainScene(this)
-        this.scene = this.mainScene
+        // 创建canvas元素
+        this.canvas = document.createElement("canvas");
+        // 初始化游戏的宽度和高度
+        this.width = 0;
+        this.height = 0;
+        // 获取canvas的上下文
+        this.ctx = null;
+        // 创建默认场景对象
+        this.scene = new MainScene(this); // 默认场景为MainScene
+        // 初始化canvas
+        this.initCanvas();
+        // 初始化事件
+        this.initEvent();
     }
-    // 初始化画布
-    initCanvas() {
-        let canvas = document.createElement("canvas")
-        // 获取到全屏的宽高
-        canvas.width = document.documentElement.clientWidth
-        canvas.height = document.documentElement.clientHeight
-        // 进行宽高放大
-        canvas.width = canvas.width * window.devicePixelRatio
-        canvas.height = canvas.height * window.devicePixelRatio
-        // 实际画布大小
-        canvas.style.width = canvas.width  / window.devicePixelRatio + "px"
-        canvas.style.height = canvas.height / window.devicePixelRatio+ "px"
-        document.body.appendChild(canvas)
 
-        // ctx上下文都进行缩放
-        this.ctx = canvas.getContext("2d")
-        this.ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-        this.width = canvas.width/window.devicePixelRatio
-        this.height = canvas.height/window.devicePixelRatio
-        
+    // 初始化canvas
+    initCanvas() {
+        // 获取canvas元素
+        const canvas = this.canvas;
+        // 获取设备像素比
+        const devicePixelRatio = window.devicePixelRatio;
+        // 获取body元素
+        const body = document.body;
+
+        // 根据设备像素比设置canvas的宽度和高度
+        canvas.width = document.documentElement.clientWidth * devicePixelRatio;
+        canvas.height = document.documentElement.clientHeight * devicePixelRatio;
+        // 根据设备像素比设置canvas的样式
+        canvas.style.width = `${canvas.width / devicePixelRatio}px`;
+        canvas.style.height = `${canvas.height / devicePixelRatio}px`;
+        // 将canvas添加到body元素中
+        body.appendChild(canvas);
+
+        // 获取canvas的上下文
+        this.ctx = canvas.getContext("2d");
+        // 根据设备像素比进行缩放
+        this.ctx.scale(devicePixelRatio, devicePixelRatio);
+        // 更新游戏的宽度和高度
+        this.width = canvas.width / devicePixelRatio;
+        this.height = canvas.height / devicePixelRatio;
     }
+
     // 初始化事件
     initEvent() {
-        const that = this
+        // 监听点击事件
         document.addEventListener("click", (event) => {
-            that.scene.onclick(event);
-        })
+            this.scene.onclick(event);
+        });
     }
 
-
-    // 每帧执行
-    frameRun(deltalTime) {
-        // 优先执行逻辑
-        this.logic(deltalTime)
-        // 每次先清理 
-        this.clear()
-        // 执行绘制
-        this.draw()
+    // 渲染一帧
+    frameRun(deltaTime) {
+        // 执行逻辑更新
+        this.logic(deltaTime);
+        // 清除画布
+        this.clear();
+        // 绘制场景
+        this.draw();
     }
+
     // 清除画布
     clear() {
-        this.ctx.clearRect(0, 0, this.width, this.height)
-    }
-    // 帧逻辑
-    logic(deltalTime) {
-        this.scene.logic(deltalTime)
-    }
-    // 帧绘制
-    draw() {
-        this.scene.draw()
+        this.ctx.clearRect(0, 0, this.width, this.height);
     }
 
+    // 执行逻辑更新
+    logic(deltaTime) {
+        this.scene.logic(deltaTime);
+    }
+
+    // 绘制场景
+    draw() {
+        this.scene.draw();
+    }
 }
 
-const game = new Game()
-export default game
+// 创建游戏对象
+const game = new Game();
+// 导出游戏对象
+export default game;

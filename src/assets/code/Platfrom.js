@@ -25,8 +25,8 @@ class Platform extends GameObject {
         eval(this.moveScript)
 
        // 更新碰撞检测和显示分数
-       this.getComponent('collision').update();
-       this.getComponent('score').update();
+    //    this.getComponent('collision').update();
+    //    this.getComponent('score').update();
     }
 }
 
