@@ -1,59 +1,47 @@
 
-resolveElastic = function(player, entity) {
-    // Find the mid points of the entity and player
+// 解析弹性碰撞
+resolveElastic = function (player, entity) {
+    // 获取玩家的中点坐标
     var pMidX = player.getMidX();
     var pMidY = player.getMidY();
+    // 获取实体的中点坐标
     var aMidX = entity.getMidX();
     var aMidY = entity.getMidY();
 
-    // To find the side of entry calculate based on
-    // the normalized sides
+    // 计算两点的差值
     var dx = (aMidX - pMidX) / entity.halfWidth;
     var dy = (aMidY - pMidY) / entity.halfHeight;
 
-    // Calculate the absolute change in x and y
+    // 计算x轴和y轴的绝对值
     var absDX = abs(dx);
     var absDY = abs(dy);
 
-    // If the distance between the normalized x and y
-    // position is less than a small threshold (.1 in this case)
-    // then this object is approaching from a corner
+    // 如果x轴和y轴的差值小于0.1，则表示是弹性碰撞
     if (abs(absDX - absDY) < .1) {
-
-        // If the player is approaching from positive X
+        // 如果x轴的差值小于0，表示实体在玩家的右边
         if (dx < 0) {
 
-            // Set the player x to the right side
             player.x = entity.getRight();
 
-        // If the player is approaching from negative X
         } else {
 
-            // Set the player x to the left side
             player.x = entity.getLeft() - player.width;
         }
 
-        // If the player is approaching from positive Y
+        // 如果y轴的差值小于0，表示实体在玩家的下边
         if (dy < 0) {
 
-            // Set the player y to the bottom
             player.y = entity.getBottom();
 
-        // If the player is approaching from negative Y
         } else {
 
-            // Set the player y to the top
             player.y = entity.getTop() - player.height;
         }
 
-        // Randomly select a x/y direction to reflect velocity on
+        // 计算x轴和y轴的速度
         if (Math.random() < .5) {
 
-            // Reflect the velocity at a reduced rate
             player.vx = -player.vx * entity.restitution;
-
-            // If the object's velocity is nearing 0, set it to 0
-            // STICKY_THRESHOLD is set to .0004
             if (abs(player.vx) < STICKY_THRESHOLD) {
                 player.vx = 0;
             }
@@ -65,38 +53,34 @@ resolveElastic = function(player, entity) {
             }
         }
 
-    // If the object is approaching from the sides
     } else if (absDX > absDY) {
 
-        // If the player is approaching from positive X
+        // 如果x轴的差值大于y轴的差值，表示实体在玩家的右边
         if (dx < 0) {
             player.x = entity.getRight();
 
         } else {
-        // If the player is approaching from negative X
             player.x = entity.getLeft() - player.width;
         }
 
-        // Velocity component
+        // 计算x轴的速度
         player.vx = -player.vx * entity.restitution;
 
         if (abs(player.vx) < STICKY_THRESHOLD) {
             player.vx = 0;
         }
 
-    // If this collision is coming from the top or bottom more
     } else {
 
-        // If the player is approaching from positive Y
+        // 如果y轴的差值大于x轴的差值，表示实体在玩家的下边
         if (dy < 0) {
             player.y = entity.getBottom();
 
         } else {
-        // If the player is approaching from negative Y
             player.y = entity.getTop() - player.height;
         }
 
-        // Velocity component
+        // 计算y轴的速度
         player.vy = -player.vy * entity.restitution;
         if (abs(player.vy) < STICKY_THRESHOLD) {
             player.vy = 0;

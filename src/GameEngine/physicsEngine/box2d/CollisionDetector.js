@@ -1,3 +1,6 @@
+var CollisionDetector = function(){
+    
+}
 CollisionDetector.prototype.collideRect = function (collider, collidee) {
     var l1 = collider.getLeft();
     var t1 = collider.getTop();
@@ -15,5 +18,15 @@ CollisionDetector.prototype.collideRect = function (collider, collidee) {
 
     return true;
 };
+CollisionDetector.prototype.detectCollisions = function (player, collidables) {
+    var collisions = [];
+    for (var i = 0; i < collidables.length; i++) {
+        var collidable = collidables[i];
+        if (collideRect(player, collidable)) {
+            collisions.push(collidable);
+        }
+    }
+    return collisions;
+}
 
 export default CollisionDetector

@@ -1,89 +1,78 @@
-// 碰撞对象
 var Collision = {
-    // 弹性碰撞对象
     elastic: function (restitution) {
-        this.restitution = restitution || 0.2;
+        this.restitution = restitution || .2;
     },
 
-    // 平移对象
     displace: function () {
 
     }
 };
 
-// 物理实体对象
+
 var PhysicsEntity = function (collisionName, type) {
-    // 实体类型
+
     this.type = type || PhysicsEntity.DYNAMIC;
 
-    // 碰撞类型
     this.collision = collisionName || PhysicsEntity.ELASTIC;
 
-    // 实体宽度和高度
     this.width = 20;
     this.height = 20;
 
-    // 实体宽度和高度的一半
-    this.halfWidth = this.width * 0.5;
-    this.halfHeight = this.height * 0.5;
+    this.halfWidth = this.width * .5;
+    this.halfHeight = this.height * .5;
 
-    // 根据碰撞类型获取对应的碰撞对象
     var collision = Collision[this.collision];
     collision.call(this);
 
-    // 实体位置和速度
     this.x = 0;
     this.y = 0;
 
     this.vx = 0;
     this.vy = 0;
 
-    // 加速度
+
     this.ax = 0;
     this.ay = 0;
 
-    // 更新边界
     this.updateBounds();
 };
 
-// 物理实体对象的方法
+
 PhysicsEntity.prototype = {
-    // 更新实体边界
+
     updateBounds: function () {
-        this.halfWidth = this.width * 0.5;
-        this.halfHeight = this.height * 0.5;
+        this.halfWidth = this.width * .5;
+        this.halfHeight = this.height * .5;
     },
 
-    // 获取实体中心X坐标
     getMidX: function () {
         return this.halfWidth + this.x;
     },
 
-    // 获取实体中心Y坐标
     getMidY: function () {
         return this.halfHeight + this.y;
     },
 
-    // 获取实体顶部Y坐标
+
     getTop: function () {
         return this.y;
     },
-    // 获取实体左侧X坐标
     getLeft: function () {
         return this.x;
     },
-    // 获取实体右侧X坐标
     getRight: function () {
         return this.x + this.width;
     },
-    // 获取实体底部Y坐标
     getBottom: function () {
         return this.y + this.height;
     }
 };
 
-// 物理实体类型
+// 表示运动学物理实体，这种物理实体的运动不受重力和其他外力的影响，只受其自身速度的控制。
 PhysicsEntity.KINEMATIC = 'kinematic';
+// 表示动态物理实体，这种物理实体的运动受重力和其他外力的影响。
 PhysicsEntity.DYNAMIC = 'dynamic';
+//  表示位移碰撞类型，这种碰撞类型会使物理实体在碰撞时发生位移。
 PhysicsEntity.DISPLACE = 'displace';
+//  表示弹性碰撞类型，这种碰撞类型会使物理实体在碰撞时发生弹性反弹。
 PhysicsEntity.ELASTIC = 'elastic';
