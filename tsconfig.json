@@ -1,0 +1,40 @@
+{
+  "compilerOptions": {
+    "target": "es6", // 目标 ECMAScript 版本（影响生成的 JavaScript 代码的语法特性）
+    "module": "ES6", // 指定模块系统（如 CommonJS、ES6 模块等）
+    "lib": ["es6", "dom"], // 指定编译过程中需要考虑的库文件（如 ES6、DOM 等）
+    "strict": true, // 启用所有严格的类型检查选项
+    "esModuleInterop": true, // 允许 CommonJS 和 ES 模块之间的互操作性
+    "declaration": true, // 生成对应的声明文件（`.d.ts`）
+    "outDir": "dist", // 编译输出目录
+    "rootDir": "src", // 源码根目录
+    "sourceMap": true, // 生成源码映射文件（`.map`），便于调试
+    "inlineSourceMap": false, // （可选）将源码映射内联到输出文件中
+    "experimentalDecorators": true, // 启用装饰器（用于类、属性、方法等）
+    "baseUrl": ".", // 指定模块解析的基目录
+    "paths": { // （可选）模块别名映射，简化导入路径
+      "@utils/*": ["src/utils/*"]
+    },
+    "typeRoots": ["node_modules/@types"], // 包含的类型声明文件（`.d.ts`）目录
+    "types": [], // 显式包含的类型声明包（无需在 `typeRoots` 下查找）
+    "skipLibCheck": true, // 忽略对声明文件（`.d.ts`）的类型检查，加快编译速度
+    "forceConsistentCasingInFileNames": true, // 强制检查文件名大小写一致性
+    "resolveJsonModule": false, // 支持导入和导出 JSON 文件
+    "allowSyntheticDefaultImports": true, // 允许从没有默认导出的模块中默认导入
+    "incremental": false, // 启用增量编译，提高二次编译速度
+    // "tsBuildInfoFile": "tsconfig.buildinfo", // 增量编译信息文件
+    "noEmitOnError": true, // 当有编译错误时，不生成输出文件
+    "allowJs": true, // 允许编译 JavaScript 文件
+    "checkJs": false,
+  },
+  "include": [ // 包含的编译文件或目录（相对于 `tsconfig.json` 所在位置）
+    "src/**/*.ts",
+    "src/**/*.js",
+    "src/**/*.tsx"
+  ],
+  "exclude": [ // 排除的编译文件或目录
+    "node_modules",
+    "**/*.spec.ts",
+    "**/__tests__/*"
+  ]
+}

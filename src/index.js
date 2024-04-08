@@ -4,18 +4,11 @@ import GameEngine from "./GameEngine/GameEngine.js";
 // 导入 Platfrom 类
 import Platfrom from "./assets/code/Platfrom.js";
 
-// 导入 ExampleApplication 类（假设已存在，并且和 GameEngine 可以协同工作）
-import ExampleApplication from "./assets/code/ExampleApplication.js";
-
 // 导入 main.css 样式文件
 import "./main.css";
 
 // 创建一个新的 GameEngine 实例
 let gameEngine = new GameEngine();
-
-// 在当前场景中添加一个 Platfrom 对象实例（位置：100, 100；尺寸：100x100）
-gameEngine.sceneManager.currentScene.addElement(new Platfrom(gameEngine, 100, 100, 100, 100));
-gameEngine.sceneManager.currentScene.addElement(new ExampleApplication(gameEngine));
 
 // 初始化动画循环的上一帧时间戳
 let lastTime = 1;
