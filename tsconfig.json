@@ -28,9 +28,7 @@
     "checkJs": false,
   },
   "include": [ // 包含的编译文件或目录（相对于 `tsconfig.json` 所在位置）
-    "src/**/*.ts",
-    "src/**/*.js",
-    "src/**/*.tsx"
+    "src/**/*"
   ],
   "exclude": [ // 排除的编译文件或目录
     "node_modules",

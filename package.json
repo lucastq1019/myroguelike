@@ -17,7 +17,8 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "npx webpack && webpack serve --open"
+    "start": "npx webpack && webpack serve --open",
+    "build": "npx webpack"
   },
   "repository": {
     "type": "git",

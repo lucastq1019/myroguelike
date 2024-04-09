@@ -2,7 +2,7 @@ const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 module.exports = {
     mode: "development",
-    entry: "/src/index.js",
+    entry: "/src/index.ts",
     output: {
         filename: "[name].js",
         path: path.resolve(__dirname, 'dist')
@@ -34,7 +34,7 @@ module.exports = {
                     loader: 'ts-loader',
                     options: {
                         transpileOnly: true, // 可选，仅进行转译而不执行类型检查，提高构建速度。若需要类型检查，去掉此选项或设为 false
-                        configFile: './tsconfig.json', // 可选，指定 tsconfig.json 文件路径。默认为项目根目录下的 tsconfig.json
+                        configFile: 'tsconfig.json', // 可选，指定 tsconfig.json 文件路径。默认为项目根目录下的 tsconfig.json
                     },
                 },
             ],

@@ -2,15 +2,6 @@ import Component from "../Component";
 import GameEngine from "../GameEngine";
 import Scene from "./Scene";
 
-// 假设场景类具有以下接口
-interface Scene {
-    name: string;
-    sceneManager?: SceneManager;
-    onUnload?(): void;
-    load?(): void;
-    update?(dt: number): void;
-}
-
 class SceneManager extends Component {
     private currentScene: Scene | null;
     private scenes: { [name: string]: Scene };

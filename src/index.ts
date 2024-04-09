@@ -1,8 +1,5 @@
 // 导入 GameEngine 类
-import GameEngine from "./GameEngine/GameEngine.js";
-
-// 导入 Platfrom 类
-import Platfrom from "./assets/code/Platfrom.js";
+import GameEngine from "./GameEngine/GameEngine";
 
 // 导入 main.css 样式文件
 import "./main.css";
