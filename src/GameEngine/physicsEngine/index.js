@@ -1,4 +1,4 @@
-import Component from "../Component";
+import Component from "../core/objects/Component";
 import World2d from "./box2d/World2d"
 import Vec2 from './box2d/common/Vec2';
 class PhysicsEngine extends Component {

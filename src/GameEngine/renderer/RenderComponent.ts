@@ -1,5 +1,5 @@
 // 假设这里存在一些基础库或接口定义，例如：
-import Component  from '../Component';
+import Component  from '../core/objects/Component';
 import CanvasManager from './CanvasManager';
 
 

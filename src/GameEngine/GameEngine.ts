@@ -1,19 +1,20 @@
 import { RenderingEngine } from './renderer/index';
 import PhysicsEngine from './physicsEngine/index';
-import AudioEngine from './audioEngine/AudioEngine';
-import ScriptingEngine from './scriptingEngine/ScriptingEngine';
-import AnimationEngine from './animationEngine/AnimationEngine';
-import NetworkingEngine from './networkingEngine/NetworkingEngine';
+import AudioEngine from './engines/AudioEngine';
+import ScriptingEngine from './engines/ScriptingEngine';
+import AnimationEngine from './engines/AnimationEngine';
+import NetworkingEngine from './engines/NetworkingEngine';
 import SceneManager from './sceneManager/SceneManager';
-import AIEngine from './aiEngine/AIEngine';
+import AIEngine from './engines/AIEngine';
 import DataManager from './dataManager/dataManager';
-import EventDispatcher from './eventDispatcher/EventDispatcher';
+import EventDispatcher from './events/EventDispatcher';
 import Camera2D from './camera/Camera2D';
 
 /**
  * 游戏引擎类
  */
 class GameEngine {
+
     private renderingEngine: RenderingEngine;
     private physics: PhysicsEngine;
     private audio: AudioEngine;
@@ -38,7 +39,7 @@ class GameEngine {
     constructor() {
         const renderingEngine = new RenderingEngine(this);
         const physicsEngine = new PhysicsEngine();
-        const audioEngine = new AudioEngine(this);
+        const audioEngine = AudioEngine.getInstance();
         const scriptingEngine = new ScriptingEngine(this);
         const animationEngine = new AnimationEngine(this);
         const networkingEngine = new NetworkingEngine(this);
@@ -46,7 +47,7 @@ class GameEngine {
         const aiEngine = new AIEngine(this);
         const dataManager = new DataManager(this);
         const eventDispatcher = new EventDispatcher();
-        
+
         this.renderingEngine = renderingEngine;
         this.physics = physicsEngine;
         this.audio = audioEngine;
@@ -81,6 +82,11 @@ class GameEngine {
     render(): void {
         // ...
     }
+
+    getActiveCamera(): Camera2D | null {
+        return this.camera
+    }
+
 }
 
 export default GameEngine;

@@ -1,7 +1,9 @@
 // 如果需要，请导入必要的类型或接口
 
+import Component from "../core/objects/Component";
+
 class Scene {
-    elements: object[];
+    elements: Component[];
     /**
      * 创建一个具有给定名称的新Scene实例。
      * @param name 场景的唯一标识符。
@@ -16,6 +18,11 @@ class Scene {
      */
     load(): void {
         // 在此处添加资源加载逻辑
+    }
+
+    // 卸载场景
+    onUnload():void{
+
     }
 
     /**

@@ -1,4 +1,4 @@
-import Component from "../Component";
+import Component from "../core/objects/Component";
 import GameEngine from "../GameEngine";
 import Scene from "./Scene";
 
@@ -15,7 +15,7 @@ class SceneManager extends Component {
     }
 
     registerScene(scene: Scene): void {
-        scene.sceneManager = this; // 将场景管理器引用传递给场景，便于场景内部操作
+        // scene.sceneManager = this; // 将场景管理器引用传递给场景，便于场景内部操作
         this.scenes[scene.name] = scene;
     }
 
@@ -38,9 +38,6 @@ class SceneManager extends Component {
             }
             this.currentScene = newScene;
             this.eventDispatcher.dispatchEvent({ type: 'sceneSwitchEnd', newScene });
-
-            // 确保更新当前场景
-            this.update(dt => this.currentScene?.update?.(dt));
         } else {
             console.error(`Scene with name ${sceneName} not found.`);
         }

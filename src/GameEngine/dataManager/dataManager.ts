@@ -1,4 +1,4 @@
-import Component from "../Component";
+import Component from "../core/objects/Component";
 import GameEngine from "../GameEngine";
 
 // 假设我们有一个简单数据结构来表示游戏数据

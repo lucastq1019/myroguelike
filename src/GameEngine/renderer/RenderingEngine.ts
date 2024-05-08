@@ -3,16 +3,19 @@
 import CanvasManager from './CanvasManager';
 import RenderComponent from './RenderComponent';
 import GameEngine from '../GameEngine';
+import Camera2D from '../camera/Camera2D';
 
 class RenderingEngine {
   private gameEngine: GameEngine; // 替换为实际的游戏引擎类型
   private canvasManager: CanvasManager;
   private renderComponents: RenderComponent[];
+  private activeCamera: Camera2D | null = null;
 
   constructor(gameEngine: GameEngine) { // 替换为实际的游戏引擎类型
     this.gameEngine = gameEngine;
     this.canvasManager = new CanvasManager();
     this.renderComponents = [];
+    this.activeCamera = gameEngine.getActiveCamera(); // 假设GameEngine有一个方法来获取当前活动的相机
   }
 
   /**
@@ -60,12 +63,16 @@ class RenderingEngine {
   render() {
     this.canvasManager.clear();
 
-    const viewMatrix = this.gameEngine.camera.getViewMatrix(); // 假设 getViewMatrix 返回正确的类型
-    this.updateViewMatrix(viewMatrix);
+    if (this.activeCamera) {
+      const viewMatrix = this.activeCamera.getViewMatrix();
+      this.updateViewMatrix(viewMatrix);
 
-    this.renderComponents.forEach((component: RenderComponent) => {
-      component.render(this.canvasManager);
-    });
+      this.renderComponents.forEach((component: RenderComponent) => {
+        component.render(this.canvasManager);
+      });
+    } else {
+      console.warn('No active camera found, rendering skipped.');
+    }
   }
 }
 

@@ -1,5 +1,5 @@
-import Component from "../Component";
-import AnimationComponent from "./AnimationComponent";
+import Component from "../core/objects/Component";
+import AnimationComponent from "../core/objects/AnimationComponent";
 
 class AnimationEngine extends Component {
 

@@ -1,4 +1,4 @@
-import Component from '../Component';
+import Component from '../core/objects/Component';
 
 
 class NetworkingEngine extends Component {

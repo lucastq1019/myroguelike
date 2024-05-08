@@ -1,46 +1,46 @@
-import Component from "../Component";
-import GameEngine from "../GameEngine";
+import Component from "../core/objects/Component";
+import Vector2 from "../core/common/Vector2";
+import ComponentConfig from "../core/objects/ComponentConfig";
 
-interface Camera2DConfig {
-  x?: number;
-  y?: number;
+interface Camera2DConfig  extends ComponentConfig{
+  position?: Vector2;
   scale?: number;
-  width?: number;
-  height?: number;
+  size?: Vector2;
 }
 
 class Camera2D extends Component {
-  x: number;
-  y: number;
+  position: Vector2;
   scale: number;
-  width: number;
-  height: number;
+  size: Vector2;
 
-  constructor(gameEngine: GameEngine,x:number,y:number,scale:number,width:number,height:number) {
-    super(gameEngine);
-    this.x = x ;
-    this.y= y ;
-    this.scale = scale ;
-    this.width = width ;
-    this.height = height ;
+  constructor(config: Camera2DConfig ) {
+    super(config);
+    this.position = config.position || new Vector2(0, 0);
+    this.scale = config.scale || 1;
+    this.size = config.size || new Vector2(800, 600);
   }
 
-  setPosition(x: number, y: number): void {
-    this.x = x;
-    this.y = y;
+  setPosition(position: Vector2): void {
+    this.position.set(position);
   }
 
   setScale(scale: number): void {
     this.scale = scale;
   }
 
-  update(dt: number): void {}
+  update(dt: number): void {
+    // 可能需要在这里添加一些动态相机行为，如跟随特定对象
+  }
 
   getViewMatrix(): number[][] {
+    const x = this.position.x;
+    const y = this.position.y;
+    const scale = this.scale;
+
     return [
-      [this.scale, 0, -this.x * this.scale], // 第一行
-      [0, this.scale, -this.y * this.scale], // 第二行
-      [0, 0, 1],                            // 第三行
+      [scale, 0, -x * scale], // 第一行
+      [0, scale, -y * scale], // 第二行
+      [0, 0, 1],              // 第三行
     ];
   }
 }
