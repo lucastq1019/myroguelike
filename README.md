@@ -1,15 +1,69 @@
- project/
-   ├── src/
-   │   ├── assets/             // 存放游戏所需的图片、音频、字体等资源
-   │   ├── components/         // 游戏界面组件
-   │   ├── scenes/             // 游戏场景相关代码
-   │   ├── systems/            // 游戏逻辑系统（如玩家系统、敌人系统、UI系统等）
-   │   ├── utils/              // 工具函数、常量等
-   │   ├── GameContent.ts      // 游戏内容主入口，负责初始化和运行游戏
-   │   └── index.html          // 游戏主页面
-   ├── package.json
-   ├── tsconfig.json
-   └── ...
+/game_project/
+|-- src/
+|   |-- assets/           # 存放游戏资源，如图片、音频等
+|   |   |-- images/
+|   |   |-- sounds/
+|   |
+|   |-- components/       # UI组件和游戏元素的代码
+|   |   |-- UI/
+|   |   |   |-- Button.ts # UI按钮组件
+|   |   |   |-- Panel.ts  # UI面板组件
+|   |   |   |-- ...
+|   |   |
+|   |   |-- GameElements/
+|   |   |   |-- Player.ts # 玩家角色代码
+|   |   |   |-- Enemy.ts  # 敌人角色代码
+|   |   |   |-- ...
+|   |   |
+|   |   |-- index.ts      # 导入所有组件，便于统一管理
+|   |
+|   |-- scenes/           # 游戏场景代码
+|   |   |-- MainMenu.ts   # 主菜单场景
+|   |   |-- GameScene.ts  # 游戏主场景
+|   |   |-- Settings.ts   # 设置场景
+|   |   |-- ...
+|   |   |-- index.ts      # 导入所有场景，便于统一管理
+|   |
+|   |-- services/         # 游戏服务代码，如网络请求、数据存储等
+|   |   |-- NetworkService.ts
+|   |   |-- StorageService.ts
+|   |   |-- ...
+|   |
+|   |-- GameEngine/       # 游戏引擎核心代码
+|   |   |-- GameEngine.ts # 游戏引擎核心类
+|   |   |-- SceneManager.ts # 场景管理器
+|   |   |-- UIManager.ts  # UI管理器
+|   |   |-- ...
+|   |
+|   |-- utils/            # 工具函数和常量
+|   |   |-- MathUtils.ts  # 数学工具函数
+|   |   |-- Constants.ts  # 常量定义
+|   |   |-- ...
+|   |
+|   |-- index.ts          # 应用入口文件
+|
+|-- public/
+|   |-- index.html        # HTML入口文件
+|   |-- favicon.ico       # 网页图标
+|   |-- ...
+|
+|-- .gitignore            # Git忽略文件配置
+|-- package.json          # Node.js项目配置
+|-- tsconfig.json         # TypeScript编译配置
+|-- webpack.config.js     # Webpack打包配置
+|-- README.md             # 项目说明文档
+|-- ...
+Transform.ts： 创建一个Transform类，用于管理游戏对象的位置、旋转和缩放。它可以包含Vector2或Vector3类型的position、rotation和scale属性。
+
+Component.ts： 创建一个Component基类，用于表示附加到GameObject的可扩展功能。每个组件都有自己的更新逻辑，可以访问并影响GameObject的属性。
+
+ComponentFactory.ts： 创建一个ComponentFactory类，用于根据组件类型创建组件实例。这样，你可以在游戏逻辑中使用工厂方法创建和附加组件，而无需直接实例化。
+
+SceneManager.ts： 创建一个SceneManager类，用于管理游戏中的场景和游戏对象。它可以负责加载、卸载场景，以及在场景之间切换。SceneManager也可以包含一个游戏对象树，方便查找和操作对象。
+
+index.ts： 在index.ts中，导出GameObject、Transform、Component、ComponentFactory和SceneManager，以便外部代码可以使用这些核心对象管理功能
+
+
 
 代办事项：
 

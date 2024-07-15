@@ -1,14 +1,17 @@
-import { RenderingEngine } from './renderer/index';
-import PhysicsEngine from './physicsEngine/index';
-import AudioEngine from './engines/AudioEngine';
-import ScriptingEngine from './engines/ScriptingEngine';
-import AnimationEngine from './engines/AnimationEngine';
-import NetworkingEngine from './engines/NetworkingEngine';
-import SceneManager from './sceneManager/SceneManager';
-import AIEngine from './engines/AIEngine';
-import DataManager from './dataManager/dataManager';
-import EventDispatcher from './events/EventDispatcher';
 import Camera2D from './camera/Camera2D';
+import Vector2 from './core/common/Vector2';
+import GameObject from './core/objects/GameObject';
+import DataManager from './dataManager/dataManager';
+import AIEngine from './engines/AIEngine';
+import AnimationEngine from './engines/AnimationEngine';
+import AudioEngine from './engines/AudioEngine';
+import NetworkingEngine from './engines/NetworkingEngine';
+import ScriptingEngine from './engines/ScriptingEngine';
+import EventDispatcher from './events/EventDispatcher';
+import PhysicsEngine from './physicsEngine/index';
+import RenderingEngine from './renderer/RenderingEngine';
+import SceneManager from './sceneManager/SceneManager';
+import scenesConfig from '../scenes.json';
 
 /**
  * 游戏引擎类
@@ -38,28 +41,44 @@ class GameEngine {
 
     constructor() {
         const renderingEngine = new RenderingEngine(this);
-        const physicsEngine = new PhysicsEngine();
-        const audioEngine = AudioEngine.getInstance();
-        const scriptingEngine = new ScriptingEngine(this);
-        const animationEngine = new AnimationEngine(this);
-        const networkingEngine = new NetworkingEngine(this);
+        // const physicsEngine = new PhysicsEngine();
+        // const audioEngine = AudioEngine.getInstance();
+        // const scriptingEngine = new ScriptingEngine();
+        // const animationEngine = new AnimationEngine(this);
+        // const networkingEngine = new NetworkingEngine(this);
         const sceneManager = new SceneManager(this);
-        const aiEngine = new AIEngine(this);
-        const dataManager = new DataManager(this);
+        // const aiEngine = new AIEngine(this);
+        // const dataManager = new DataManager(this);
         const eventDispatcher = new EventDispatcher();
+        this.camera = new Camera2D({
+            position: new Vector2(0, 0), scale: 1,
+            size: new Vector2(800, 600), name: "mainCamera",
+            gameObject: new GameObject
+        });
 
         this.renderingEngine = renderingEngine;
-        this.physics = physicsEngine;
-        this.audio = audioEngine;
-        this.scripting = scriptingEngine;
-        this.animation = animationEngine;
-        this.networking = networkingEngine;
+        // this.physics = physicsEngine;
+        // this.audio = audioEngine;
+        // this.scripting = scriptingEngine;
+        // this.animation = animationEngine;
+        // this.networking = networkingEngine;
         this.sceneManager = sceneManager;
-        this.ai = aiEngine;
-        this.dataManager = dataManager;
+        // this.ai = aiEngine;
+        // this.dataManager = dataManager;
         this.eventDispatcher = eventDispatcher;
+        
+        this.sceneManager.registerScenesFromConfig(scenesConfig.scenes);
+        this.loadScenesFromConfig();
     }
-
+    async loadScenesFromConfig() {
+        const response = await fetch('./scenes.json');
+        const scenesConfig = await response.json();
+        scenesConfig.scenes.forEach((scene: { autoLoad: any; name: string; }) => {
+          if (scene.autoLoad) {
+            this.sceneManager.switchScene(scene.name);
+          }
+        });
+      }
     /**
      * 创建游戏引擎
      * @returns {GameEngine} 游戏引擎实例 暂时空着
@@ -80,11 +99,15 @@ class GameEngine {
      * 渲染
      */
     render(): void {
-        // ...
+        this.renderingEngine.render()
     }
 
     getActiveCamera(): Camera2D | null {
         return this.camera
+    }
+
+    getRenderingEngine(): RenderingEngine {
+        return this.renderingEngine;
     }
 
 }

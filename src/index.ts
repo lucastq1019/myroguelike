@@ -1,18 +1,28 @@
 // 导入 GameEngine 类
 import GameEngine from "./GameEngine/GameEngine";
 
+// 导入 UI管理器
+// import UIManager from "./GameEngine/UIManager";
+
 // 导入 main.css 样式文件
 import "./main.css";
 
 // 创建一个新的 GameEngine 实例
-let gameEngine = new GameEngine();
+const gameEngine = new GameEngine();
+
+// 初始化场景管理器
+// gameEngine.initializeSceneManager();
+
+// 初始化UI管理器
+// const uiManager = new UIManager();
+// uiManager.init(gameEngine); // 假设UIManager需要GameEngine实例来初始化
 
 // 初始化动画循环的上一帧时间戳
-let lastTime = 1;
+let lastTime = performance.now();
 
 // 定义并启动动画循环函数
 (function animloop(timestamp) {
-    // 计算当前帧与上一帧的时间差（deltalTime，用于游戏逻辑和渲染的更新速度控制）
+    // 计算当前帧与上一帧的时间差（deltaTime，用于游戏逻辑和渲染的更新速度控制）
     const deltaTime = timestamp - lastTime;
 
     // 更新上一帧时间戳为当前帧时间戳

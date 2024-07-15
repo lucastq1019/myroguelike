@@ -1,15 +1,14 @@
-// 如果需要，请导入必要的类型或接口
-
 import Component from "../core/objects/Component";
 
 class Scene {
-    elements: Component[];
+    private components: Component[];
+
     /**
      * 创建一个具有给定名称的新Scene实例。
      * @param name 场景的唯一标识符。
      */
     constructor(readonly name: string) {
-        this.elements = [];
+        this.components = [];
     }
 
     /**
@@ -21,37 +20,37 @@ class Scene {
     }
 
     // 卸载场景
-    onUnload():void{
-
+    onUnload(): void {
+        // 清理资源和状态
     }
 
     /**
-     * 向场景中添加元素。
-     * @param element 要添加的元素。
+     * 向场景中添加组件。
+     * @param component 要添加的组件。
      */
-    addElement(element: object): void {
-        this.elements.push(element);
+    addComponent(component: Component): void {
+        this.components.push(component);
     }
 
     /**
-     * 从场景中移除元素。
-     * @param element 要移除的元素。
-     * @returns 如果元素成功移除则返回true，否则返回false。
+     * 从场景中移除组件。
+     * @param component 要移除的组件。
+     * @returns 如果组件成功移除则返回true，否则返回false。
      */
-    removeElement(element: object): boolean {
-        const index = this.elements.indexOf(element);
+    removeComponent(component: Component): boolean {
+        const index = this.components.indexOf(component);
         if (index !== -1) {
-            this.elements.splice(index, 1);
+            this.components.splice(index, 1);
             return true;
         }
         return false;
     }
 
     /**
-     * 清除场景中的所有元素。
+     * 清除场景中的所有组件。
      */
-    clearElements(): void {
-        this.elements = [];
+    clearComponents(): void {
+        this.components = [];
     }
 
     /**
@@ -73,12 +72,20 @@ class Scene {
     }
 
     /**
-     * 通过传递自上次更新以来的时间（dt）来更新场景中的所有元素。
+ * 获取场景中的所有组件。
+ * @returns 组件数组的浅拷贝。
+ */
+    getComponents(): Component[] {
+        return [...this.components];
+    }
+
+    /**
+     * 通过传递自上次更新以来的时间（dt）来更新场景中的所有组件。
      * @param dt 自上次更新以来的时间（以秒为单位）。
      */
     update(dt: number): void {
-        for (const item of this.elements) {
-            // item.update(dt);
+        for (const component of this.components) {
+            component.update(dt);
         }
     }
 }

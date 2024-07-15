@@ -1,6 +1,9 @@
 // AudioEngine.ts
 import  AudioSource from 'core/objects/AudioSource';
 export default class AudioEngine {
+  static createAudioEngine() {
+      throw new Error('Method not implemented.');
+  }
   private audioSources: Map<string, AudioSource> = new Map();
 
   // 单例模式，确保只有一个AudioEngine实例

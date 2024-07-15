@@ -1,0 +1,21 @@
+{
+    "scenes": [
+      {
+        "name": "Main Menu",
+        "autoLoad": true,
+        "components": [
+          "MenuComponent",
+          "BackgroundComponent"
+        ]
+      },
+      {
+        "name": "Level 1",
+        "autoLoad": false,
+        "components": [
+          "PlayerComponent",
+          "EnemyComponent",
+          "UIComponent"
+        ]
+      }
+    ]
+  }

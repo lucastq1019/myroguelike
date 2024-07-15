@@ -21,8 +21,11 @@ module.exports = {
     })],
     module: {
         rules: [{
-            test: /\.(png|jpeg|jpg|gif|svg)$/i,
-            type: "asset/resource"
+            test: /\.(png|jpeg|jpg|gif|svg|json)$/i,
+            type: "asset/resource",
+            generator: {
+                filename: '[name][ext]'
+            }
         }, {
             test: /\.css$/i,
             use: ["style-loader", "css-loader"]
