@@ -11,7 +11,7 @@ import EventDispatcher from './events/EventDispatcher';
 import PhysicsEngine from './physicsEngine/index';
 import RenderingEngine from './renderer/RenderingEngine';
 import SceneManager from './sceneManager/SceneManager';
-import scenesConfig from '../scenes.json';
+import scenesConfig from '@/scenes.json';
 
 /**
  * 游戏引擎类
@@ -76,6 +76,7 @@ class GameEngine {
         scenesConfig.scenes.forEach((scene: { autoLoad: any; name: string; }) => {
           if (scene.autoLoad) {
             this.sceneManager.switchScene(scene.name);
+            console.log(`自动加载场景：${scene.name}`)
           }
         });
       }

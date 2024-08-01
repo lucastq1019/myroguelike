@@ -11,7 +11,7 @@ module.exports = {
         alias: {
             "@": path.resolve(__dirname, "src")
         },
-        extensions: ['.ts', '.tsx', '.js', '.jsx'],
+        extensions: ['.ts', '.tsx', '.js', '.jsx','json'],
     },
     devServer: {
         static: "./dist"
@@ -21,7 +21,7 @@ module.exports = {
     })],
     module: {
         rules: [{
-            test: /\.(png|jpeg|jpg|gif|svg|json)$/i,
+            test: /\.(png|jpeg|jpg|gif|svg)$/i,
             type: "asset/resource",
             generator: {
                 filename: '[name][ext]'
