@@ -1,21 +1,23 @@
 {
-    "scenes": [
+  "origin": {
+    "children":[
       {
-        "name": "Main Menu",
-        "autoLoad": true,
-        "components": [
-          "MenuComponent",
-          "BackgroundComponent"
-        ]
-      },
-      {
-        "name": "Level 1",
-        "autoLoad": false,
-        "components": [
-          "PlayerComponent",
-          "EnemyComponent",
-          "UIComponent"
+        "name":"menu",
+        "type":"group",
+        "children":[
+          {
+            "name":"file",
+            "type":"text",
+            "position":{"x":0,"y":0},
+            "func":"file"
+          },
+          {
+            "name":"edit",
+            "type":"text",
+            "func":"file"
+          }
         ]
       }
     ]
   }
+}

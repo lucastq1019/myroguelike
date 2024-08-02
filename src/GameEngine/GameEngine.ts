@@ -11,7 +11,7 @@ import EventDispatcher from './events/EventDispatcher';
 import PhysicsEngine from './physicsEngine/index';
 import RenderingEngine from './renderer/RenderingEngine';
 import SceneManager from './sceneManager/SceneManager';
-import scenesConfig from '@/scenes.json';
+import scenesConfig from '../scenes.json';
 
 /**
  * 游戏引擎类
@@ -67,12 +67,12 @@ class GameEngine {
         // this.dataManager = dataManager;
         this.eventDispatcher = eventDispatcher;
         
-        this.sceneManager.registerScenesFromConfig(scenesConfig.scenes);
-        this.loadScenesFromConfig();
+        // this.loadScenesFromConfig();
     }
     async loadScenesFromConfig() {
         const response = await fetch('./scenes.json');
         const scenesConfig = await response.json();
+        console.log(scenesConfig)
         scenesConfig.scenes.forEach((scene: { autoLoad: any; name: string; }) => {
           if (scene.autoLoad) {
             this.sceneManager.switchScene(scene.name);
@@ -111,6 +111,9 @@ class GameEngine {
         return this.renderingEngine;
     }
 
+    init(){
+        
+    }
 }
 
 export default GameEngine;

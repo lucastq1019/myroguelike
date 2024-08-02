@@ -11,7 +11,7 @@ import "./main.css";
 const gameEngine = new GameEngine();
 
 // 初始化场景管理器
-// gameEngine.initializeSceneManager();
+// gameEngine.init();
 
 // 初始化UI管理器
 // const uiManager = new UIManager();
