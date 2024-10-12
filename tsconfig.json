@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
     "target": "es6", // 目标 ECMAScript 版本（影响生成的 JavaScript 代码的语法特性）
-    "module": "ES6", // 指定模块系统（如 CommonJS、ES6 模块等）
-    "lib": ["es6","es2019", "dom"], // 指定编译过程中需要考虑的库文件（如 ES6、DOM 等）
+    "module": "ES2020", // 指定模块系统（如 CommonJS、ES6 模块等）
+    "lib": ["es6","es2020", "dom"], // 指定编译过程中需要考虑的库文件（如 ES6、DOM 等）
     "strict": true, // 启用所有严格的类型检查选项
     "esModuleInterop": true, // 允许 CommonJS 和 ES 模块之间的互操作性
     "declaration": true, // 生成对应的声明文件（`.d.ts`）

@@ -6,7 +6,7 @@ export default class StartScene extends Scene {
     }
 
     load(): void {
-        this.addElement(new Comment(this.gameEngine, "Hello World!"));
+        this.addComponent(new Comment(this.gameEngine, "Hello World!"));
         console.log("StartScene loaded");
     }
 
