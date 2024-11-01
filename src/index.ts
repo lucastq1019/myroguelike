@@ -8,7 +8,7 @@ import GameEngine from "./GameEngine/GameEngine";
 import "./main.css";
 
 // 创建一个新的 GameEngine 实例
-const gameEngine = new GameEngine();
+const gameEngine = GameEngine.createGameEngine();
 
 // 初始化场景管理器
 // gameEngine.init();

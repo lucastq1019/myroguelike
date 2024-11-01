@@ -8,7 +8,7 @@ import GameEngine from "../GameEngine";
 import Scene from "./Scene";
 // 导入渲染引擎RenderingEngine
 import RenderingEngine from "../renderer/RenderingEngine";
-import DynamicComponentFactory from '../../systems/DynamicComponentFactory';
+import DynamicComponentFactory from '../../services/DynamicComponentFactory';
 
 // 场景管理器类，用于处理场景的注册、切换和更新
 class SceneManager {
@@ -44,28 +44,28 @@ class SceneManager {
     async registerScenesFromConfig(scenesConfig: any[]) {
         const factory = DynamicComponentFactory.getInstance();
 
-        for (const sceneConfig of scenesConfig) {
-            // 验证配置项
-            if (!sceneConfig.name || !Array.isArray(sceneConfig.components)) {
-                console.error('Invalid scene configuration:', sceneConfig);
-                continue;
-            }
+        // for (const sceneConfig of scenesConfig) {
+        //     // 验证配置项
+        //     if (!sceneConfig.name || !Array.isArray(sceneConfig.components)) {
+        //         console.error('Invalid scene configuration:', sceneConfig);
+        //         continue;
+        //     }
 
-            try {
-                const scene = new Scene(sceneConfig.name); // 假设Scene构造函数接受配置参数
-                for (const componentName of sceneConfig.components) {
-                    const component = await factory.createComponent(componentName, {});
-                    if (component) {
-                        scene.addComponent(component);
-                    }
-                }
+        //     try {
+        //         const scene = new Scene(sceneConfig.name); // 假设Scene构造函数接受配置参数
+        //         for (const componentName of sceneConfig.components) {
+        //             const component = await factory.createComponent(componentName, {});
+        //             if (component) {
+        //                 scene.addComponent(component);
+        //             }
+        //         }
 
-                this.registerScene(scene);
-            } catch (error) {
-                // 异常处理
-                console.error(`Error registering scene ${sceneConfig.name}:`, error);
-            }
-        }
+        //         this.registerScene(scene);
+        //     } catch (error) {
+        //         // 异常处理
+        //         console.error(`Error registering scene ${sceneConfig.name}:`, error);
+        //     }
+        // }
     }
 
     // 切换到指定场景

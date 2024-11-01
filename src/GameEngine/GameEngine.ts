@@ -1,3 +1,4 @@
+import StartScene from '../scenes/StartScene';
 import Camera2D from './camera/Camera2D';
 import Vector2 from './core/common/Vector2';
 import GameObject from './core/objects/GameObject';
@@ -66,7 +67,8 @@ class GameEngine {
         // this.dataManager = dataManager;
         this.eventDispatcher = eventDispatcher;
         
-        this.loadScenesFromConfig();
+        // this.loadScenesFromConfig();
+
     }
     async loadScenesFromConfig() {
         const response = await fetch('./scenes.json');
@@ -112,7 +114,7 @@ class GameEngine {
     }
 
     init(){
-        
+        this.sceneManager.registerScene(new StartScene("start"))
     }
 }
 

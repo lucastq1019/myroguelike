@@ -13,7 +13,7 @@ export default class DynamicComponentFactory {
   async createComponent(componentName: string, config: any): Promise<InstanceType<any> | null> {
     try {
       // 使用 ES6 动态导入组件
-      const module = await import(`${componentName}.js`);
+      const module = await import(`${componentName}.ts`);
 
       if (!module.default) {
         console.error(`Component ${componentName} not found.`);

@@ -19,7 +19,7 @@ export default class GameObject {
      * 构造函数，用于创建一个游戏对象
      * @param config 游戏对象的配置参数，包括id、tag、active等
      */
-    constructor(config: GameObjectConfig = {}) {
+    constructor(config: GameObjectConfig = {id:"",tag:"",active:true}) {
         this.id = config.id || '';
         this.tag = config.tag || '';
         this.active = config.active ?? true;
