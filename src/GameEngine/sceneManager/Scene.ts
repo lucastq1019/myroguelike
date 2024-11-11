@@ -1,4 +1,5 @@
 import Component from "../core/objects/Component";
+import RenderComponent from "../renderer/RenderComponent";
 
 class Scene {
     private components: Component[];
@@ -87,6 +88,10 @@ class Scene {
         for (const component of this.components) {
             component.update(dt);
         }
+    }
+    // 新增方法：获取需要渲染的组件
+    getRenderComponents(): Component[] {
+        return this.components.filter(component => component instanceof RenderComponent);
     }
 }
 

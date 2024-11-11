@@ -46,7 +46,6 @@ class GameEngine {
         // const scriptingEngine = new ScriptingEngine();
         // const animationEngine = new AnimationEngine(this);
         // const networkingEngine = new NetworkingEngine(this);
-        const sceneManager = new SceneManager(this);
         // const aiEngine = new AIEngine(this);
         // const dataManager = new DataManager(this);
         const eventDispatcher = new EventDispatcher();
@@ -57,16 +56,21 @@ class GameEngine {
         });
 
         this.renderingEngine = renderingEngine;
+        this.renderingEngine.setActiveCamera(this.camera);
         // this.physics = physicsEngine;
         // this.audio = audioEngine;
         // this.scripting = scriptingEngine;
         // this.animation = animationEngine;
         // this.networking = networkingEngine;
-        this.sceneManager = sceneManager;
+        console.log(this)
+
         // this.ai = aiEngine;
         // this.dataManager = dataManager;
         this.eventDispatcher = eventDispatcher;
-        
+        const sceneManager = new SceneManager(this);
+        this.sceneManager = sceneManager;
+        this.init()
+
         // this.loadScenesFromConfig();
 
     }
@@ -81,7 +85,7 @@ class GameEngine {
         //     console.log(`自动加载场景：${scene.name}`)
         //   }
         // });
-      }
+    }
     /**
      * 创建游戏引擎
      * @returns {GameEngine} 游戏引擎实例 暂时空着
@@ -112,9 +116,14 @@ class GameEngine {
     getRenderingEngine(): RenderingEngine {
         return this.renderingEngine;
     }
+    getSceneManager(): SceneManager {
+        return this.sceneManager;
+    }
 
-    init(){
-        this.sceneManager.registerScene(new StartScene("start"))
+    init() {
+        const startScene = new StartScene('start');
+        this.sceneManager.registerScene(startScene)
+        this.sceneManager.switchScene(startScene.name)
     }
 }
 

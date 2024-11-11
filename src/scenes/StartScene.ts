@@ -1,10 +1,10 @@
-import GameObject from "src/GameEngine/core/objects/GameObject";
+import GameObject from "../GameEngine/core/objects/GameObject";
 import Component from "../GameEngine/core/objects/Component";
 import Scene from "../GameEngine/sceneManager/Scene";
-import Vector2 from "src/GameEngine/core/common/Vector2";
-import Transform from "src/GameEngine/core/objects/Transform";
-import RenderComponent from "src/GameEngine/renderer/RenderComponent";
-import RenderComponentFactory from "src/GameEngine/renderer/RenderComponentFactory";
+import Vector2 from "../GameEngine/core/common/Vector2";
+import Transform from "../GameEngine/core/objects/Transform";
+import RenderComponent from "../GameEngine/renderer/RenderComponent";
+import RenderComponentFactory from "../GameEngine/renderer/RenderComponentFactory";
 
 export default class StartScene extends Scene {
     constructor(name: string) {
@@ -24,7 +24,10 @@ export default class StartScene extends Scene {
             new Vector2(1, 1)
         )
         const factory = RenderComponentFactory.getInstance();
-        const buttonComponent= factory.createRenderComponent('button', "Button 1", button1)
+        const buttonComponent= factory.createRenderComponent({
+            name: 'MyComponent',
+            gameObject: button1
+          })
         button1.addComponent(buttonComponent);
         this.addComponent(buttonComponent);
         console.log("StartScene loaded");

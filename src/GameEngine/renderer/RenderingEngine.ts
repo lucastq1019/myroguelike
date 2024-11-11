@@ -2,6 +2,7 @@ import CanvasManager from './CanvasManager';
 import RenderComponent from './RenderComponent';
 import GameEngine from '../GameEngine';
 import Camera2D from '../camera/Camera2D';
+import SceneManager from '../sceneManager/SceneManager';
 
 class RenderingEngine {
     private gameEngine: GameEngine;
@@ -14,6 +15,7 @@ class RenderingEngine {
         this.canvasManager = new CanvasManager();
         this.renderComponents = [];
         this.activeCamera = this.gameEngine.getActiveCamera();
+        console.log(this)
     }
 
     addRenderComponent(component: RenderComponent) {
@@ -52,9 +54,11 @@ class RenderingEngine {
         if (this.activeCamera) {
             const viewMatrix = this.activeCamera.getViewMatrix();
             this.updateViewMatrix(viewMatrix);
-
-            this.renderComponents.forEach((component) => {
-                component.render(this.canvasManager);
+            console.log(this)
+            this.gameEngine.getSceneManager().getCurrentScene()?.getRenderComponents().forEach((renderComponent) => {
+                if (renderComponent instanceof RenderComponent) {
+                    renderComponent.render(this.canvasManager);
+                }
             });
         } else {
             console.warn('No active camera found, rendering skipped.');

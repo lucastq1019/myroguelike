@@ -27,11 +27,16 @@ class SceneManager {
         this.scenes = {};
         this.eventDispatcher = gameEngine.getEventDispatcher();
         this.renderingEngine = gameEngine.getRenderingEngine(); // 假设GameEngine提供渲染器实例
+        console.log(this)
+    }
+    getCurrentScene(): Scene | null {
+        return this.currentScene;
     }
 
     // 注册一个场景
     registerScene(scene: Scene): void {
         this.scenes[scene.name] = scene;
+        console.log(`Scene "${scene.name}" registered.`)
         scene.getComponents().forEach((component) => {
             if (component instanceof RenderComponent) {
                 this.renderingEngine.addRenderComponent(component);
