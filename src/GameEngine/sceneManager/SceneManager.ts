@@ -37,11 +37,6 @@ class SceneManager {
     registerScene(scene: Scene): void {
         this.scenes[scene.name] = scene;
         console.log(`Scene "${scene.name}" registered.`)
-        scene.getComponents().forEach((component) => {
-            if (component instanceof RenderComponent) {
-                this.renderingEngine.addRenderComponent(component);
-            }
-        });
     }
 
 
@@ -115,7 +110,7 @@ class SceneManager {
     private unloadCurrentScene(): void {
         if (this.currentScene) {
             const renderComponents = this.currentScene.getComponents().filter((component) => component instanceof RenderComponent);
-            renderComponents.forEach((component) => this.renderingEngine.removeRenderComponent(component));
+            // renderComponents.forEach((component) => this.renderingEngine.removeRenderComponent(component));
 
             if (typeof this.currentScene.onUnload === 'function') {
                 this.currentScene.onUnload();
@@ -138,7 +133,7 @@ class SceneManager {
     // 更新当前场景
     private updateCurrentScene(newScene: Scene): void {
         const renderComponents = newScene.getComponents().filter((component) => component instanceof RenderComponent);
-        renderComponents.forEach((component) => this.renderingEngine.addRenderComponent(component));
+        // renderComponents.forEach((component) => this.renderingEngine.addRenderComponent(component));
 
         this.currentScene = newScene;
     }

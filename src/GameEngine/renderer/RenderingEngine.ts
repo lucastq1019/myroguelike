@@ -60,9 +60,32 @@ class RenderingEngine {
                     renderComponent.render(this.canvasManager);
                 }
             });
+
+             // 绘制相机视野的矩形
+             this.drawCameraBounds();
         } else {
             console.warn('No active camera found, rendering skipped.');
         }
+    }
+
+    private drawCameraBounds() {
+        if (!this.activeCamera) return;
+
+        const ctx = this.canvasManager.getCtx();
+        if (!ctx) return;
+
+        const { position, size } = this.activeCamera;
+
+        ctx.strokeStyle = 'red'; // 设置边框颜色
+        ctx.lineWidth = 2; // 设置边框宽度
+
+        ctx.beginPath();
+        ctx.moveTo(position.x, position.y);
+        ctx.lineTo(position.x + size.x, position.y);
+        ctx.lineTo(position.x + size.x, position.y + size.y);
+        ctx.lineTo(position.x, position.y + size.y);
+        ctx.closePath();
+        ctx.stroke();
     }
 }
 

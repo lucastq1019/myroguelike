@@ -12,24 +12,47 @@ export default class StartScene extends Scene {
     }
 
     load(): void {
-        // 给开始场景增加三个按钮
-        const button1 = new GameObject({
-            id: "button1",
-            tag: "button",
-            active: true
-        });
-        button1.transform = new Transform(
-            new Vector2(100, 100),
-            0,
-            new Vector2(1, 1)
-        )
-        const factory = RenderComponentFactory.getInstance();
-        const buttonComponent= factory.createRenderComponent({
-            name: 'MyComponent',
-            gameObject: button1
-          })
-        button1.addComponent(buttonComponent);
-        this.addComponent(buttonComponent);
+        // 获取屏幕中心位置
+        const screenWidth = 800; // 假设屏幕宽度为800
+        const screenHeight = 600; // 假设屏幕高度为600
+        const buttonWidth = 200;
+        const buttonHeight = 50;
+        const buttonSpacing = 20;
+
+        // 计算按钮的中心位置
+        const buttonX = (screenWidth - buttonWidth) / 2;
+        const buttonY = (screenHeight - (3 * buttonHeight + 2 * buttonSpacing)) / 2;
+
+        // 创建三个按钮
+        const createButton = (id: string, text: string, y: number) => {
+            const button = new GameObject({
+                id: id,
+                tag: "button",
+                active: true
+            });
+            button.transform = new Transform({
+                position: new Vector2(buttonX, y),
+                rotation: 0,
+                scale: new Vector2(1, 1)
+            });
+            const factory = RenderComponentFactory.getInstance();
+            const buttonComponent = factory.createRenderComponent({
+                name: text,
+                gameObject: button
+            });
+            button.addComponent(buttonComponent);
+            this.addComponent(buttonComponent);
+        };
+
+        // 创建开始按钮
+        createButton("startButton", "开始", buttonY);
+
+        // 创建设置按钮
+        createButton("settingsButton", "设置", buttonY + buttonHeight + buttonSpacing);
+
+        // 创建关于按钮
+        createButton("aboutButton", "关于", buttonY + 2 * buttonHeight + 2 * buttonSpacing);
+
         console.log("StartScene loaded");
     }
 
