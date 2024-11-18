@@ -70,6 +70,9 @@ class Scene {
      */
     handleMouseEvent(event: MouseEvent): void {
         // 在此处处理鼠标事件
+        this.getComponents().forEach(component => {
+            
+        })
     }
 
     /**

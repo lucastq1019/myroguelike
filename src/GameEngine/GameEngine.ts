@@ -18,6 +18,8 @@ import SceneManager from './sceneManager/SceneManager';
  */
 class GameEngine {
 
+    private static _instance: GameEngine;
+
     private renderingEngine: RenderingEngine;
     private physics: PhysicsEngine;
     private audio: AudioEngine;
@@ -38,16 +40,8 @@ class GameEngine {
         return this.eventDispatcher;
     }
 
-
-    constructor() {
+    private constructor() {
         const renderingEngine = new RenderingEngine(this);
-        // const physicsEngine = new PhysicsEngine();
-        // const audioEngine = AudioEngine.getInstance();
-        // const scriptingEngine = new ScriptingEngine();
-        // const animationEngine = new AnimationEngine(this);
-        // const networkingEngine = new NetworkingEngine(this);
-        // const aiEngine = new AIEngine(this);
-        // const dataManager = new DataManager(this);
         const eventDispatcher = new EventDispatcher();
         this.camera = new Camera2D({
             position: new Vector2(0, 0), scale: 1,
@@ -57,41 +51,24 @@ class GameEngine {
 
         this.renderingEngine = renderingEngine;
         this.renderingEngine.setActiveCamera(this.camera);
-        // this.physics = physicsEngine;
-        // this.audio = audioEngine;
-        // this.scripting = scriptingEngine;
-        // this.animation = animationEngine;
-        // this.networking = networkingEngine;
-        console.log(this)
-
-        // this.ai = aiEngine;
-        // this.dataManager = dataManager;
         this.eventDispatcher = eventDispatcher;
         const sceneManager = new SceneManager(this);
         this.sceneManager = sceneManager;
-        this.init()
-
-        // this.loadScenesFromConfig();
-
+        this.init();
     }
+
+    static getInstance(): GameEngine {
+        if (!GameEngine._instance) {
+            GameEngine._instance = new GameEngine();
+        }
+        return GameEngine._instance;
+    }
+
     async loadScenesFromConfig() {
         const response = await fetch('./scenes.json');
         const scenesConfig = await response.json();
-        console.log(scenesConfig)
-        this.sceneManager.registerScenesFromConfig(scenesConfig.scenes)
-        // scenesConfig.scenes.forEach((scene: { autoLoad: any; name: string; }) => {
-        //   if (scene.autoLoad) {
-        //     this.sceneManager.registerScenesFromConfig(scene,scene.name);
-        //     console.log(`自动加载场景：${scene.name}`)
-        //   }
-        // });
-    }
-    /**
-     * 创建游戏引擎
-     * @returns {GameEngine} 游戏引擎实例 暂时空着
-     */
-    static createGameEngine(): GameEngine {
-        return new GameEngine();
+        console.log(scenesConfig);
+        this.sceneManager.registerScenesFromConfig(scenesConfig.scenes);
     }
 
     /**
@@ -106,24 +83,25 @@ class GameEngine {
      * 渲染
      */
     render(): void {
-        this.renderingEngine.render()
+        this.renderingEngine.render();
     }
 
     getActiveCamera(): Camera2D | null {
-        return this.camera
+        return this.camera;
     }
 
     getRenderingEngine(): RenderingEngine {
         return this.renderingEngine;
     }
+
     getSceneManager(): SceneManager {
         return this.sceneManager;
     }
 
     init() {
         const startScene = new StartScene('start');
-        this.sceneManager.registerScene(startScene)
-        this.sceneManager.switchScene(startScene.name)
+        this.sceneManager.registerScene(startScene);
+        this.sceneManager.switchScene(startScene.name);
     }
 }
 

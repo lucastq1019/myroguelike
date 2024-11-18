@@ -4,8 +4,16 @@ import RenderComponent from "./RenderComponent";
 
 export default class ButtonRenderer extends RenderComponent {
     render(canvasManager: CanvasManager): void {
-        canvasManager.getCtx()?.fillText(this.name, this.gameObject.transform.position.x, this.gameObject.transform.position.y);
+        const ctx = canvasManager.getCtx();
+        if (ctx) {
+            const position= this.gameObject.transform.position;
+            ctx.fillStyle = "blue";
+            ctx.fillRect(position.x, position.y, 100, 50);
+            ctx.fillStyle = "white";
+            ctx.fillText(this.name, position.x+50, position.y+25);
+        }
     }
+
     constructor(config: ComponentConfig) {
         super(config);
     }

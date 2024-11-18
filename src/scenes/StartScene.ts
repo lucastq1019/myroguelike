@@ -1,10 +1,9 @@
 import GameObject from "../GameEngine/core/objects/GameObject";
-import Component from "../GameEngine/core/objects/Component";
 import Scene from "../GameEngine/sceneManager/Scene";
 import Vector2 from "../GameEngine/core/common/Vector2";
 import Transform from "../GameEngine/core/objects/Transform";
-import RenderComponent from "../GameEngine/renderer/RenderComponent";
 import RenderComponentFactory from "../GameEngine/renderer/RenderComponentFactory";
+import GameEngine from "../GameEngine/GameEngine"; // 引入GameEngine
 
 export default class StartScene extends Scene {
     constructor(name: string) {
@@ -24,7 +23,7 @@ export default class StartScene extends Scene {
         const buttonY = (screenHeight - (3 * buttonHeight + 2 * buttonSpacing)) / 2;
 
         // 创建三个按钮
-        const createButton = (id: string, text: string, y: number) => {
+        const createButton = (id: string, text: string, y: number, onClick?: () => void) => {
             const button = new GameObject({
                 id: id,
                 tag: "button",
@@ -38,14 +37,33 @@ export default class StartScene extends Scene {
             const factory = RenderComponentFactory.getInstance();
             const buttonComponent = factory.createRenderComponent({
                 name: text,
-                gameObject: button
+                gameObject: button,
+                onClick: function (): void {
+                    throw new Error("Function not implemented.");
+                }
             });
             button.addComponent(buttonComponent);
             this.addComponent(buttonComponent);
+
+            // 添加点击事件
+            if (onClick) {
+                buttonComponent.onClick = onClick;
+            }
         };
+        this.handleKeyboardEvent
 
         // 创建开始按钮
-        createButton("startButton", "开始", buttonY);
+        createButton("startButton", "开始", buttonY, () => {
+            // 切换到 CharacterSelectionScene
+            GameEngine.getInstance().getSceneManager().switchScene("CharacterSelectionScene");
+              // 注册事件监听器
+            const eventDispatcher = GameEngine.getInstance().getEventDispatcher();
+            eventDispatcher.addEventListener('gameStart', (event) => {
+            console.log('游戏开始事件被触发:', event);
+            });
+
+            console.log("StartScene loaded");
+        });
 
         // 创建设置按钮
         createButton("settingsButton", "设置", buttonY + buttonHeight + buttonSpacing);
