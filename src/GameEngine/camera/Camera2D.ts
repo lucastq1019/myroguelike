@@ -2,22 +2,27 @@ import Component from "../core/objects/Component";
 import Vector2 from "../core/common/Vector2";
 import ComponentConfig from "../core/objects/ComponentConfig";
 
+/**
+ * 相机组件配置 
+ */
 interface Camera2DConfig extends ComponentConfig {
   position?: Vector2;
   scale?: number;
   size?: Vector2;
 }
-
+/**
+ * 2D 相机组件
+ */
 class Camera2D extends Component {
   position: Vector2;
   scale: number;
   size: Vector2;
 
-  constructor(config: Camera2DConfig) {
+  constructor(config: Camera2DConfig={}) {
     super(config);
-    this.position = config.position || new Vector2(0, 0);
-    this.scale = config.scale || 1;
-    this.size = config.size || new Vector2(800, 600);
+    this.position = config.position ?? new Vector2(0, 0);
+    this.scale = config.scale ?? 1;
+    this.size = config.size ?? new Vector2(800, 600);
   }
 
   /**

@@ -9,10 +9,10 @@ export default abstract class Component {
   gameObject: GameObject;
   onClick: () => void;
 
-  constructor(config: ComponentConfig) {
-    this.name = config.name;
-    this.gameObject = config.gameObject;
-    this.onClick = config.onClick || (() => {});
+  constructor(config: ComponentConfig={}) {
+    this.name = config.name??"";
+    this.gameObject = config.gameObject??"";
+    this.onClick = config.onClick ?? (() => {});
   }
 
   abstract update(dt: number): void;
