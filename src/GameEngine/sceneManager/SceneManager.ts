@@ -1,7 +1,7 @@
 // 导入核心对象Component
 import Component from "../core/objects/Component";
 // 导入渲染组件RenderComponent
-import RenderComponent from '../renderer/RenderComponent';
+import RenderComponent from '../core/objects/RenderComponent';
 // 导入游戏引擎GameEngine
 import GameEngine from "../GameEngine";
 // 导入场景类Scene
@@ -71,7 +71,7 @@ class SceneManager {
     // 切换到指定场景
     switchScene(sceneName: string): void {
         if (!sceneName) {
-            console.error("Scene name cannot be empty.");
+            console.error("Scene name[{sceneName}] cannot be empty.");
             return;
         }
 

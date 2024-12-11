@@ -1,5 +1,5 @@
 import Vec2 from "@/common/Vector.js";
-import RenderComponent from "./RenderComponent";
+import RenderComponent from "../core/objects/RenderComponent";
 
 class ImageRenderer extends RenderComponent {
     constructor(image, position, width, height) {

@@ -1,5 +1,5 @@
 import Component from "../core/objects/Component";
-import RenderComponent from "../renderer/RenderComponent";
+import RenderComponent from "../core/objects/RenderComponent";
 
 class Scene {
     private components: Component[];
@@ -61,6 +61,7 @@ class Scene {
      */
     handleKeyboardEvent(event: KeyboardEvent): void {
         // 在此处处理键盘事件
+        console.log(event)
     }
 
     /**
@@ -70,6 +71,7 @@ class Scene {
      */
     handleMouseEvent(event: MouseEvent): void {
         // 在此处处理鼠标事件
+        console.log(event)
         this.getComponents().forEach(component => {
             
         })

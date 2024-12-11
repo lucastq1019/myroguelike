@@ -1,4 +1,4 @@
-import RenderComponent from './RenderComponent';
+import RenderComponent from '../core/objects/RenderComponent';
 
 class RectangleRenderer extends RenderComponent {
     constructor(position, size, color = 'black') {

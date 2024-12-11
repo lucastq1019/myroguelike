@@ -1,6 +1,6 @@
 import ComponentConfig from '../core/objects/ComponentConfig';
 import CanvasManager from './CanvasManager';
-import RenderComponent from './RenderComponent';
+import RenderComponent from '../core/objects/RenderComponent';
 
 export default class TextRenderer extends RenderComponent {
     render(canvasManager: CanvasManager): void {

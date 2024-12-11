@@ -1,7 +1,7 @@
 // 假设这里存在一些基础库或接口定义，例如：
-import Component  from '../core/objects/Component';
-import GameObject from '../core/objects/GameObject';
-import CanvasManager from './CanvasManager';
+import Component  from './Component';
+import GameObject from './GameObject';
+import CanvasManager from '../../renderer/CanvasManager';
 
 
 /**

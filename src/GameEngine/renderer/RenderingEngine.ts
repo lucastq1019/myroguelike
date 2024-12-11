@@ -1,5 +1,5 @@
 import CanvasManager from './CanvasManager';
-import RenderComponent from './RenderComponent';
+import RenderComponent from '../core/objects/RenderComponent';
 import GameEngine from '../GameEngine';
 import Camera2D from '../camera/Camera2D';
 import SceneManager from '../sceneManager/SceneManager';
@@ -54,7 +54,6 @@ class RenderingEngine {
         if (this.activeCamera) {
             const viewMatrix = this.activeCamera.getViewMatrix();
             this.updateViewMatrix(viewMatrix);
-            console.log(this)
             this.gameEngine.getSceneManager().getCurrentScene()?.getRenderComponents().forEach((renderComponent) => {
                 if (renderComponent instanceof RenderComponent) {
                     renderComponent.render(this.canvasManager);
