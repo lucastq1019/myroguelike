@@ -16,6 +16,7 @@ import InputHandler from './events/InputHandler';
 import PhysicsEngine from './physicsEngine/index';
 import RenderingEngine from './renderer/RenderingEngine';
 import SceneManager from './sceneManager/SceneManager';
+import MapScene from '../scenes/MapScene';
 
 /**
  * 游戏引擎类
@@ -152,7 +153,10 @@ class GameEngine {
         const gameScene = new GameScene('GameScene');
         this.sceneManager.registerScene(gameScene);
 
-        this.sceneManager.switchScene("GameScene");
+        const mapScene = new MapScene('MapScene');
+        this.sceneManager.registerScene(mapScene);
+
+        this.sceneManager.switchScene("MapScene");
     }
 
     private startGameLoop() {

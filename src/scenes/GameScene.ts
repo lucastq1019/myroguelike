@@ -4,6 +4,7 @@ import Vector2 from "../GameEngine/core/common/Vector2";
 import Transform from "../GameEngine/core/objects/Transform";
 import RenderComponentFactory from "../GameEngine/core/objects/tools/ComponentFactory";
 import GameEngine from "../GameEngine/GameEngine"; // 引入GameEngine
+import Player from "src/assets/code/Player";
 
 export default class GameScene extends Scene {
     constructor(name: string) {
@@ -11,7 +12,9 @@ export default class GameScene extends Scene {
     }
 
     load(): void {
-        console.log("GameScene loaded");
+        // 初始化玩家队伍
+        // 初始化敌人队伍
+        
     }
 
     update(dt: number): void {
