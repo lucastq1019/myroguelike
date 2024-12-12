@@ -1,3 +1,5 @@
+// GameEngine.ts
+import GameScene from '../scenes/GameScene';
 import CharacterSelectionScene from '../scenes/CharacterSelectionScene';
 import StartScene from '../scenes/StartScene';
 import Camera2D from './camera/Camera2D';
@@ -36,6 +38,12 @@ class GameEngine {
     private lastTime: number;
     private inputHandler: InputHandler;
 
+    // 添加屏幕宽度和高度属性为静态属性
+    private static screenWidth: number;
+    private static screenHeight: number;
+
+    private config: any;
+
     /**
      * 获取事件分发器
      * @returns {EventDispatcher} 事件分发器实例
@@ -45,31 +53,39 @@ class GameEngine {
     }
 
     private constructor() {
-        const renderingEngine = new RenderingEngine(this);
-        const eventDispatcher = new EventDispatcher();
-        this.camera = new Camera2D({
-            position: new Vector2(0, 0), scale: 1,
-            size: new Vector2(800, 600), name: "mainCamera",
-            gameObject: new GameObject()
+        this.loadConfig().then(() => {
+            GameEngine.screenWidth = this.config.screen.width; // 设置默认屏幕宽度
+            GameEngine.screenHeight = this.config.screen.height; // 设置默认屏幕高度
+
+            const renderingEngine = new RenderingEngine(this);
+            const eventDispatcher = new EventDispatcher();
+            this.camera = new Camera2D({
+                position: new Vector2(0, 0), scale: 1,
+                size: new Vector2(GameEngine.screenWidth, GameEngine.screenHeight), name: "mainCamera",
+                gameObject: new GameObject()
+            });
+
+            this.renderingEngine = renderingEngine;
+            this.renderingEngine.setActiveCamera(this.camera);
+            this.eventDispatcher = eventDispatcher;
+            const sceneManager = new SceneManager(this);
+            this.sceneManager = sceneManager;
+            this.physics = new PhysicsEngine(this);
+            this.audio = AudioEngine.getInstance();
+            // this.audio.setVolume(this.config.audio.volume); // 设置音量
+            this.scripting = new ScriptingEngine(this);
+            this.animation = new AnimationEngine(this);
+            this.networking = new NetworkingEngine(this);
+            this.ai =new AIEngine(this);
+            // this.dataManager = DataManager.getInstance(this);
+            this.lastTime = performance.now();
+            this.inputHandler = new InputHandler();
+
+            this.init();
+            this.startGameLoop();
+        }).catch(error => {
+            console.error('Failed to load configuration:', error);
         });
-
-        this.renderingEngine = renderingEngine;
-        this.renderingEngine.setActiveCamera(this.camera);
-        this.eventDispatcher = eventDispatcher;
-        const sceneManager = new SceneManager(this);
-        this.sceneManager = sceneManager;
-        this.physics = new PhysicsEngine(this);
-        this.audio = new AudioEngine(this);
-        this.scripting = new ScriptingEngine(this);
-        this.animation = new AnimationEngine(this);
-        this.networking = new NetworkingEngine(this);
-        this.ai = new AIEngine(this);
-        this.dataManager = new DataManager(this);
-        this.lastTime = performance.now();
-        this.inputHandler = new InputHandler();
-
-        this.init();
-        this.startGameLoop();
     }
 
     static getInstance(): GameEngine {
@@ -77,6 +93,14 @@ class GameEngine {
             GameEngine._instance = new GameEngine();
         }
         return GameEngine._instance;
+    }
+
+    private async loadConfig(): Promise<void> {
+        const response = await fetch('./config.json');
+        if (!response.ok) {
+            throw new Error('Network response was not ok ' + response.statusText);
+        }
+        this.config = await response.json();
     }
 
     async loadScenesFromConfig() {
@@ -124,7 +148,11 @@ class GameEngine {
 
         const characterSelectionScene = new CharacterSelectionScene('CharacterSelectionScene');
         this.sceneManager.registerScene(characterSelectionScene);
-        this.sceneManager.switchScene(startScene.name);
+
+        const gameScene = new GameScene('GameScene');
+        this.sceneManager.registerScene(gameScene);
+
+        this.sceneManager.switchScene("GameScene");
     }
 
     private startGameLoop() {
@@ -140,8 +168,18 @@ class GameEngine {
 
         requestAnimationFrame(this.gameLoop.bind(this));
     }
+
     public getInputHandler(): InputHandler {
         return this.inputHandler;
+    }
+
+    // 提供获取屏幕宽度和高度的方法
+    static getScreenWidth(): number {
+        return GameEngine.screenWidth;
+    }
+
+    static getScreenHeight(): number {
+        return GameEngine.screenHeight;
     }
 }
 

@@ -1,6 +1,6 @@
 import Transform from './Transform';
 import Component from './Component';
-import GameObjectConfig from './GameObjectConfig.1';
+import GameObjectConfig from './GameObjectConfig';
 
 /**
  * 游戏对象类，用于创建和管理游戏中的实体对象

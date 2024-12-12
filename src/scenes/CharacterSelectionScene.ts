@@ -1,8 +1,11 @@
+// CharacterSelectionScene.ts
 import GameObject from "../GameEngine/core/objects/GameObject";
 import Scene from "../GameEngine/sceneManager/Scene";
 import Vector2 from "../GameEngine/core/common/Vector2";
 import Transform from "../GameEngine/core/objects/Transform";
-import RenderComponentFactory from "../GameEngine/core/objects/ComponentFactory";
+import ComponentFactory from "../GameEngine/core/objects/tools/ComponentFactory";
+import TextRenderComponent from "../GameEngine/renderer/TextRenderComponent";
+import GameEngine from "../GameEngine/GameEngine"; // 引入GameEngine
 
 export default class CharacterSelectionScene extends Scene {
     constructor(name: string) {
@@ -10,9 +13,9 @@ export default class CharacterSelectionScene extends Scene {
     }
 
     load(): void {
-        // 获取屏幕中心位置
-        const screenWidth = 800; // 假设屏幕宽度为800
-        const screenHeight = 600; // 假设屏幕高度为600
+        // 获取屏幕宽度和高度
+        const screenWidth = GameEngine.getScreenWidth();
+        const screenHeight = GameEngine.getScreenHeight();
         const boxWidth = 200;
         const boxHeight = 100;
         const boxSpacing = 20;
@@ -34,10 +37,13 @@ export default class CharacterSelectionScene extends Scene {
                 rotation: 0,
                 scale: new Vector2(1, 1)
             });
-            const factory = RenderComponentFactory.getInstance();
-            const boxComponent = factory.createButtonRenderComponent({
+            const factory = ComponentFactory.getInstance();
+            const boxComponent = factory.createImageRenderComponent({
                 name: text,
-                gameObject: box
+                gameObject: box,
+                width: boxWidth,
+                height: boxHeight,
+                imageUrl: "assets/2.png"
             });
             box.addComponent(boxComponent);
             this.addComponent(boxComponent);
@@ -53,9 +59,12 @@ export default class CharacterSelectionScene extends Scene {
                 rotation: 0,
                 scale: new Vector2(1, 1)
             });
-            const descriptionComponent = factory.createButtonRenderComponent({
-                name: description,
-                gameObject: descriptionBox
+            const descriptionComponent = new TextRenderComponent({
+                text: description,
+                position: new Vector2(x, y + boxHeight + 10),
+                fontSize: 14,
+                fontColor: 'black',
+                fontFamily: 'Arial'
             });
             descriptionBox.addComponent(descriptionComponent);
             this.addComponent(descriptionComponent);
@@ -67,7 +76,7 @@ export default class CharacterSelectionScene extends Scene {
         createBox("character3", "角色3", "这是角色3的介绍", startX + 2 * (boxWidth + boxSpacing), startY);
 
         // 创建确定按钮
-        const confirmButtonX =  3 * (boxWidth + boxSpacing) /2; // 确认按钮在所有角色选择框的右侧
+        const confirmButtonX = startX + 1.5 * (boxWidth + boxSpacing); // 确认按钮在所有角色选择框的右侧
         const confirmButtonY = startY + boxHeight + textHeight + 50; // 确认按钮在所有角色选择框下方
         const confirmButton = new GameObject({
             id: "confirmButton",
@@ -79,13 +88,34 @@ export default class CharacterSelectionScene extends Scene {
             rotation: 0,
             scale: new Vector2(1, 1)
         });
-        const confirmButtonComponent = RenderComponentFactory.getInstance().createButtonRenderComponent({
+        const confirmButtonComponent = ComponentFactory.getInstance().createButtonRenderComponent({
             name: "确定",
             gameObject: confirmButton,
             onClick: () => {
                 console.log("确定按钮被点击了");
-            }
+                // 切换到 GameScene
+                GameEngine.getInstance().getSceneManager().switchScene("GameScene");
+
+                // 注册事件监听器
+                const eventDispatcher = GameEngine.getInstance().getEventDispatcher();
+                eventDispatcher.addEventListener('gameStart', (event) => {
+                    console.log('游戏开始事件被触发:', event);
+                });
+            },
+            width: 100,
+            height: 50
         });
+
+        // 确保按钮的 update 方法正确处理点击事件
+        confirmButtonComponent.update = (dt) => {
+            if (GameEngine.getInstance().getInputHandler().isMouseButtonPressed(0)) {
+                const mousePosition = GameEngine.getInstance().getInputHandler().getMousePosition();
+                if (confirmButtonComponent.isInside(mousePosition)) {
+                    confirmButtonComponent.triggerClick();
+                }
+            }
+        };
+
         confirmButton.addComponent(confirmButtonComponent);
         this.addComponent(confirmButtonComponent);
 

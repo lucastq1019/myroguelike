@@ -1,8 +1,9 @@
+// StartScene.ts
 import GameObject from "../GameEngine/core/objects/GameObject";
 import Scene from "../GameEngine/sceneManager/Scene";
 import Vector2 from "../GameEngine/core/common/Vector2";
 import Transform from "../GameEngine/core/objects/Transform";
-import RenderComponentFactory from "../GameEngine/core/objects/ComponentFactory";
+import RenderComponentFactory from "../GameEngine/core/objects/tools/ComponentFactory";
 import GameEngine from "../GameEngine/GameEngine"; // 引入GameEngine
 
 export default class StartScene extends Scene {
@@ -11,9 +12,9 @@ export default class StartScene extends Scene {
     }
 
     load(): void {
-        // 获取屏幕中心位置
-        const screenWidth = 800; // 假设屏幕宽度为800
-        const screenHeight = 600; // 假设屏幕高度为600
+        // 获取屏幕宽度和高度
+        const screenWidth = GameEngine.getScreenWidth();
+        const screenHeight = GameEngine.getScreenHeight();
         const buttonWidth = 200;
         const buttonHeight = 50;
         const buttonSpacing = 20;
@@ -39,16 +40,15 @@ export default class StartScene extends Scene {
                 name: text,
                 gameObject: button
             });
-            buttonComponent.update = (dt)=>{
-                if(GameEngine.getInstance().getInputHandler().isMouseButtonPressed(0)){
+            buttonComponent.update = (dt) => {
+                if (GameEngine.getInstance().getInputHandler().isMouseButtonPressed(0)) {
                     // 判断是不是当前按钮被点击了
-                    const mousePosition =  GameEngine.getInstance().getInputHandler().getMousePosition();
-                    if(buttonComponent.isInside(mousePosition)){
-                        buttonComponent.onClick()
+                    const mousePosition = GameEngine.getInstance().getInputHandler().getMousePosition();
+                    if (buttonComponent.isInside(mousePosition)) {
+                        buttonComponent.triggerClick();
                     }
                 }
-                
-            }
+            };
             button.addComponent(buttonComponent);
             this.addComponent(buttonComponent);
 
@@ -60,10 +60,9 @@ export default class StartScene extends Scene {
 
         // 创建开始按钮
         createButton("startButton", "开始", buttonY, () => {
-            
             // 切换到 CharacterSelectionScene
             GameEngine.getInstance().getSceneManager().switchScene("CharacterSelectionScene");
-            
+
             // 注册事件监听器
             const eventDispatcher = GameEngine.getInstance().getEventDispatcher();
             eventDispatcher.addEventListener('gameStart', (event) => {

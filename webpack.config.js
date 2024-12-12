@@ -1,5 +1,6 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin')
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 module.exports = {
     mode: "development",
     entry: "/src/index.ts",
@@ -11,13 +12,19 @@ module.exports = {
         alias: {
             "@": path.resolve(__dirname, "src")
         },
-        extensions: ['.ts', '.tsx', '.js', '.jsx','json'],
+        extensions: ['.ts', '.tsx', '.js', '.jsx', 'json'],
     },
     devServer: {
         static: "./dist"
     },
     plugins: [new HtmlWebpackPlugin({
         title: "canvas"
+    }),
+    new CopyWebpackPlugin({
+        patterns: [
+            { from: 'src/config.json', to: 'config.json' },// 根据你的文件路径调整
+            { from: 'src/assets/img/*', to: 'assets/[name][ext]' } // 修正目标路径]
+        ]
     })],
     module: {
         rules: [{

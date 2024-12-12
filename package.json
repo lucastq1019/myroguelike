@@ -6,6 +6,7 @@
   "dependencies": {
     "css-loader": "^6.7.1",
     "html-webpack-plugin": "^5.5.0",
+    "copy-webpack-plugin": "^10.2.4",
     "style-loader": "^3.3.1",
     "webpack": "^5.74.0",
     "webpack-dev-server": "^4.11.0"

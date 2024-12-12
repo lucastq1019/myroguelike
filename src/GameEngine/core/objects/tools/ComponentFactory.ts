@@ -1,9 +1,9 @@
-import RenderComponent from "./RenderComponent";
-import ButtonRenderComponent from "../../renderer/ButtonRenderComponent";
-import GameObject from "./GameObject";
-import ComponentConfig from "./ComponentConfig";
-import ImageRenderComponent from "src/GameEngine/renderer/ImageRenderComponent";
-import ImageRenderConfig from "./ImageRenderConfig";
+import RenderComponent from "../RenderComponent";
+import ButtonRenderComponent from "../../../renderer/ButtonRenderComponent";
+import GameObject from "../GameObject";
+import ComponentConfig from "../ComponentConfig";
+import ImageRenderComponent from "../../../renderer/ImageRenderComponent";
+import ImageRenderConfig from "../ImageRenderConfig";
 
 export default class ComponentFactory {
     private static instance: ComponentFactory;
