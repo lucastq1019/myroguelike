@@ -29,6 +29,7 @@ export default class ImageRenderComponent extends RenderComponent {
     render(canvasManager: CanvasManager): void {
         const context = canvasManager.getCtx();
         if (context && this.image.complete) {
+            // console.log('Image rendered:', this.imageUrl);
             context.drawImage(this.image, this.position.x, this.position.y, this.size.x, this.size.y);
         }
     }

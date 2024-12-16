@@ -156,7 +156,7 @@ class GameEngine {
         const mapScene = new MapScene('MapScene');
         this.sceneManager.registerScene(mapScene);
 
-        this.sceneManager.switchScene("MapScene");
+        this.sceneManager.switchScene("GameScene");
     }
 
     private startGameLoop() {

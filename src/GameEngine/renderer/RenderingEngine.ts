@@ -79,15 +79,21 @@ class RenderingEngine {
     ctx.strokeStyle = 'black'; // 设置边框颜色
     ctx.lineWidth = 2; // 设置边框宽度
     ctx.beginPath();
-    ctx.moveTo(position.x, position.y + size.y * 0.45);
-    ctx.lineTo(position.x + size.x, position.y + size.y * 0.45);
+    ctx.moveTo(position.x, position.y + size.y * 0.65);
+    ctx.lineTo(position.x + size.x, position.y + size.y * 0.65);
+    ctx.closePath();
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(position.x, position.y + size.y * 0.325);
+    ctx.lineTo(position.x + size.x, position.y + size.y * 0.325);
     ctx.closePath();
     ctx.stroke();
 
     const max = 4;
     for (let i = 1; i <= max-1; i++) {
       const x = position.x + i * (size.x /max);
-      const y = position.y + size.y * 0.45;
+      const y = position.y + size.y * 0.65;
       ctx.beginPath();
       ctx.moveTo(x, position.y);
       ctx.lineTo(x, y);
