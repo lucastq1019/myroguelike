@@ -55,8 +55,14 @@ class GameEngine {
 
     private constructor() {
         this.loadConfig().then(() => {
-            GameEngine.screenWidth = this.config.screen.width; // 设置默认屏幕宽度
-            GameEngine.screenHeight = this.config.screen.height; // 设置默认屏幕高度
+            // GameEngine.screenWidth = this.config.screen.width; // 设置默认屏幕宽度
+            // GameEngine.screenHeight = this.config.screen.height; // 设置默认屏幕高度
+            // 获取浏览器自动宽高配置   
+            const windowWidth = window.innerWidth;
+            const windowHeight = window.innerHeight;
+            GameEngine.screenWidth = windowWidth;
+            GameEngine.screenHeight = windowHeight;
+
 
             const renderingEngine = new RenderingEngine(this);
             const eventDispatcher = new EventDispatcher();
@@ -77,7 +83,7 @@ class GameEngine {
             this.scripting = new ScriptingEngine(this);
             this.animation = new AnimationEngine(this);
             this.networking = new NetworkingEngine(this);
-            this.ai =new AIEngine(this);
+            this.ai = new AIEngine(this);
             // this.dataManager = DataManager.getInstance(this);
             this.lastTime = performance.now();
             this.inputHandler = new InputHandler();

@@ -15,25 +15,38 @@ export default class GameScene extends Scene {
     load(): void {
         const screenWidth = GameEngine.getScreenWidth();
         const screenHeight = GameEngine.getScreenHeight();
-        const buttonWidth = 200;
-        const buttonHeight = 50;
-        const buttonSpacing = 20;
+        const buttonWidth = screenHeight * .40;;
+        const buttonHeight = screenHeight * .40;
+        const buttonSpacing = 0;
 
+        const offsetX = (GameEngine.getScreenWidth() * .5 - buttonWidth * 2) / 6
+        const offsetY = (GameEngine.getScreenWidth() * .5 - buttonWidth * 2) / 6
+
+        const array1 = [{ x: offsetX + buttonWidth + screenHeight * 0.05, y: offsetY + buttonHeight }
+            , { x: offsetX + buttonWidth, y: offsetY + screenHeight * 0.05 }
+            , { x: offsetX + screenHeight * 0.1, y: offsetY + buttonHeight + screenHeight * 0.05 }
+            , { x: offsetX + screenHeight * 0.05, y: offsetY + screenHeight * 0.1 }]
+
+        const offsetX2 = (GameEngine.getScreenWidth() * .5 - buttonWidth * 2) / 6 * 5 + GameEngine.getScreenWidth() * .5
+        const offsetY2 = (GameEngine.getScreenWidth() * .5 - buttonWidth * 2) / 6
+
+        const array2 = [{ x: offsetX2 + screenHeight * 0.05, y: offsetY + screenHeight*.1 }
+            , { x: offsetX2 + screenHeight*.1, y: offsetY2+ buttonHeight + screenHeight * 0.05 }
+            , { x: offsetX2 + buttonHeight, y: offsetY2 + screenHeight * 0.05 }
+            , { x: offsetX2 +buttonWidth + screenHeight * 0.05, y: offsetY+buttonWidth}]
         // 计算按钮的中心位置
         const buttonX = (screenWidth - buttonWidth) / 2;
 
         // 创建第一组按钮
         for (let i = 0; i < 4; i++) {
-            const buttonY = (screenHeight / 3) - (buttonHeight / 2);
-            this.createButton(`Button1_${i}`, `Button1_${i}`, buttonX-100, buttonY + i * (buttonHeight + buttonSpacing),() => {
+            this.createButton(`Button1_${i}`, `Button1_${i}`, array1[i].x, array1[i].y, () => {
                 console.log(`Button1_${i}`);
             });
         }
 
         // 创建第二组按钮
         for (let i = 0; i < 4; i++) {
-            const buttonY = (2 * screenHeight / 3) - (buttonHeight / 2);
-            this.createButton(`Button2_${i}`, `Button2_${i}`, buttonX+100, buttonY + i * (buttonHeight + buttonSpacing),() => {
+            this.createButton(`Button2_${i}`, `Button2_${i}`, array2[i].x, array2[i].y, () => {
                 console.log(`Button2_${i}`);
             });
         }
@@ -62,8 +75,8 @@ export default class GameScene extends Scene {
         const buttonComponent = factory.createButtonRenderComponent({
             name: text,
             gameObject: button,
-            width: 200,
-            height: 50,
+            width: GameEngine.getScreenHeight() * .35,
+            height: GameEngine.getScreenHeight() * .35,
             onClick: onClick
         });
         buttonComponent.update = (dt) => {

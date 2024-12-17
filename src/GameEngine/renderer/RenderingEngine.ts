@@ -59,50 +59,50 @@ class RenderingEngine {
                     renderComponent.render(this.canvasManager);
                 }
             });
-            this.drawLines();
-             // 绘制相机视野的矩形
-             this.drawCameraBounds();
+            const size = GameEngine.getScreenHeight()*.45;
+            const offsetX   =(GameEngine.getScreenWidth()*.5-size*2)/6
+            const offsetY   =(GameEngine.getScreenWidth()*.5-size*2)/6
+            this.drawLines(2,size,offsetX,offsetY);
+
+            const offsetX2   =(GameEngine.getScreenWidth()*.5-size*2)/6*5 +GameEngine.getScreenWidth()*.5
+            const offsetY2   =(GameEngine.getScreenWidth()*.5-size*2)/6
+            this.drawLines(2,size,offsetX2,offsetY2);
+            // 绘制相机视野的矩形
+            this.drawCameraBounds();
         } else {
             console.warn('No active camera found, rendering skipped.');
         }
     }
-   private drawLines() {
-    if (!this.activeCamera) return;
+    private drawLines(gridSize: number, cellSize: number, offsetX: number = 0, offsetY: number = 0) {
+        gridSize = gridSize || 10;
+        if (!this.activeCamera) return;
 
-    const ctx = this.canvasManager.getCtx();
-    if (!ctx) return;
+        const ctx = this.canvasManager.getCtx();
+        if (!ctx) return;
 
-    const { position, size } = this.activeCamera;
+        ctx.save(); // 保存当前画布状态
 
-    ctx.save(); // 保存当前画布状态
+        ctx.strokeStyle = 'black'; // 设置边框颜色
+        ctx.lineWidth = 2; // 设置边框宽度
 
-    ctx.strokeStyle = 'black'; // 设置边框颜色
-    ctx.lineWidth = 2; // 设置边框宽度
-    ctx.beginPath();
-    ctx.moveTo(position.x, position.y + size.y * 0.65);
-    ctx.lineTo(position.x + size.x, position.y + size.y * 0.65);
-    ctx.closePath();
-    ctx.stroke();
+        // 绘制水平线
+        for (let i = 0; i <= gridSize; i++) {
+            ctx.beginPath();
+            ctx.moveTo(offsetX, offsetY + i * cellSize);
+            ctx.lineTo(offsetX + gridSize * cellSize, offsetY + i * cellSize);
+            ctx.stroke();
+        }
 
-    ctx.beginPath();
-    ctx.moveTo(position.x, position.y + size.y * 0.325);
-    ctx.lineTo(position.x + size.x, position.y + size.y * 0.325);
-    ctx.closePath();
-    ctx.stroke();
+        // 绘制垂直线
+        for (let i = 0; i <= gridSize; i++) {
+            ctx.beginPath();
+            ctx.moveTo(offsetX + i * cellSize, offsetY);
+            ctx.lineTo(offsetX + i * cellSize, offsetY + gridSize * cellSize);
+            ctx.stroke();
+        }
 
-    const max = 4;
-    for (let i = 1; i <= max-1; i++) {
-      const x = position.x + i * (size.x /max);
-      const y = position.y + size.y * 0.65;
-      ctx.beginPath();
-      ctx.moveTo(x, position.y);
-      ctx.lineTo(x, y);
-      ctx.closePath();
-      ctx.stroke();
+        ctx.restore(); // 恢复画布状态
     }
-    
-    ctx.restore(); // 恢复画布状态
-}
 
     private drawCameraBounds() {
         if (!this.activeCamera) return;
