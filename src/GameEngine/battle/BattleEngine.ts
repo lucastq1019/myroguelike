@@ -1,11 +1,14 @@
 // BattleEngine.ts
-import { BattleMessage, Entity as EntityType } from './Types';
+import { BattleMessage, Entity as EntityType, Action } from './Types';
 
-export class BattleEngine {
+export default class BattleEngine {
     private worker: Worker;
+    private isInputPhase: boolean = false;
+    private inputPhaseCallback: ((entityId: number) => void) | null = null;
 
     constructor() {
-        this.worker = new Worker(new URL('./worker.ts', import.meta.url));
+        // 使用 worker-loader 处理的 Worker 文件
+        this.worker = new Worker(new URL('./Worker.ts', import.meta.url));
 
         this.worker.onmessage = (event) => {
             const message: BattleMessage = event.data;
@@ -19,10 +22,17 @@ export class BattleEngine {
                 case 'end':
                     this.handleEnd(message.data);
                     break;
+                case 'inputPhase':
+                    this.enterInputPhase(message.data);
+                    break;
                 default:
                     console.warn('Unknown message type:', message.type);
             }
         };
+    }
+
+    startBattle() {
+        this.worker.postMessage({ type: 'startBattle' });
     }
 
     init(entities: EntityType[]) {
@@ -30,7 +40,9 @@ export class BattleEngine {
     }
 
     update(entities: EntityType[]) {
-        this.worker.postMessage({ type: 'update', data: entities });
+        if (!this.isInputPhase) {
+            this.worker.postMessage({ type: 'update', data: entities });
+        }
     }
 
     private handleUpdate(state: any) {
@@ -46,5 +58,24 @@ export class BattleEngine {
     private handleEnd(result: any) {
         console.log('Battle ended with result:', result);
         // 处理战斗结束逻辑
+    }
+
+    private enterInputPhase(entityId: number) {
+        this.isInputPhase = true;
+        if (this.inputPhaseCallback) {
+            this.inputPhaseCallback(entityId);
+        }
+    }
+
+    endInputPhase(actions: Action[]) {
+        this.isInputPhase = false;
+        // 根据玩家选择的技能执行相应的动作
+        for (const action of actions) {
+            this.worker.postMessage({ type: 'action', data: action });
+        }
+    }
+
+    setInputPhaseCallback(callback: (entityId: number) => void) {
+        this.inputPhaseCallback = callback;
     }
 }

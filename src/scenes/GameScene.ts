@@ -7,16 +7,32 @@ import GameEngine from "../GameEngine/GameEngine"; // 引入GameEngine
 import Player from "src/assets/code/Player";
 import ComponentFactory from "../GameEngine/core/objects/tools/ComponentFactory";
 import ComponentConfig from "../GameEngine/core/objects/ComponentConfig";
+import  BattleEngine from "../GameEngine/battle/BattleEngine";
+import { Action } from "../GameEngine/battle/Types";
 export default class GameScene extends Scene {
+
+    private battleEngine: BattleEngine;
     constructor(name: string) {
         super(name);
+        this.battleEngine = new BattleEngine();
+        this.battleEngine.setInputPhaseCallback(this.handleInputPhase.bind(this));
     }
+
+    private handleInputPhase(entityId: number) {
+        // 这里可以添加进入指令输入阶段的逻辑，比如显示技能选择界面
+        console.log(`Entity ${entityId} is entering input phase`);
+
+        // 假设玩家选择了一个技能并生成了一个动作
+        const action: Action = { type: 'skill', sourceId: entityId, targetId: 1, damage: 20 };
+        this.battleEngine.endInputPhase([action]);
+    }
+
 
     load(): void {
         const screenWidth = GameEngine.getScreenWidth();
         const screenHeight = GameEngine.getScreenHeight();
-        const buttonWidth = screenHeight * .40;;
-        const buttonHeight = screenHeight * .40;
+        const buttonWidth = screenHeight * .45;
+        const buttonHeight = screenHeight * .45;
         const buttonSpacing = 0;
 
         const offsetX = (GameEngine.getScreenWidth() * .5 - buttonWidth * 2) / 6
@@ -55,6 +71,11 @@ export default class GameScene extends Scene {
         const startButtonY = (screenHeight / 2) - (buttonHeight / 2);
         this.createButton("StartButton", "开始", buttonX, startButtonY, () => {
             console.log("开始按钮被点击");
+            this.battleEngine.init([
+                { id: "player1", speed: 100, health: 100, actionBar: 100, isPlayer: true },
+                { id: "player2", speed: 100, health: 100, actionBar: 100, isPlayer: true }
+            ]);
+            this.battleEngine.startBattle();
         });
         console.log(this)
         console.log("GameScene loaded");
