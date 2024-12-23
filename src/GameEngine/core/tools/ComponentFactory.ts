@@ -1,9 +1,9 @@
-import RenderComponent from "../RenderComponent";
-import ButtonRenderComponent from "../../../renderer/ButtonRenderComponent";
-import GameObject from "../GameObject";
-import ComponentConfig from "../ComponentConfig";
-import ImageRenderComponent from "../../../renderer/ImageRenderComponent";
-import ImageRenderConfig from "../ImageRenderConfig";
+import RenderComponent from "../objects/RenderComponent";
+import ButtonRenderComponent from "../../renderer/ButtonRenderComponent";
+import GameObject from "../objects/GameObject";
+import ComponentConfig from "../objects/ComponentConfig";
+import ImageRenderComponent from "../../renderer/ImageRenderComponent";
+import ImageRenderConfig from "../objects/ImageRenderConfig";
 
 export default class ComponentFactory {
     private static instance: ComponentFactory;
@@ -23,5 +23,8 @@ export default class ComponentFactory {
 
     createImageRenderComponent(config: ImageRenderConfig): ImageRenderComponent {
         return new ImageRenderComponent(config);
+    }
+    createPanelRenderComponent(config: { gameObject: GameObject; width: number; height: number; name: string }): PanelRenderComponent {
+        return new PanelRenderComponent(config);
     }
 }

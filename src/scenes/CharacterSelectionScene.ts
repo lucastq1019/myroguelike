@@ -3,7 +3,7 @@ import GameObject from "../GameEngine/core/objects/GameObject";
 import Scene from "../GameEngine/sceneManager/Scene";
 import Vector2 from "../GameEngine/core/common/Vector2";
 import Transform from "../GameEngine/core/objects/Transform";
-import ComponentFactory from "../GameEngine/core/objects/tools/ComponentFactory";
+import ComponentFactory from "../GameEngine/core/tools/ComponentFactory";
 import TextRenderComponent from "../GameEngine/renderer/TextRenderComponent";
 import GameEngine from "../GameEngine/GameEngine"; // 引入GameEngine
 
