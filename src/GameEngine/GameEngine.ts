@@ -118,8 +118,25 @@ class GameEngine {
         return this.sceneManagerSystem;
     }
 
+<<<<<<< HEAD
     getSceneLoaderSystem(): SceneLoaderSystem {
         return this.sceneLoaderSystem;
+=======
+    init() {
+        const startScene = new StartScene('start');
+        this.sceneManager.registerScene(startScene);
+
+        const characterSelectionScene = new CharacterSelectionScene('CharacterSelectionScene');
+        this.sceneManager.registerScene(characterSelectionScene);
+
+        const gameScene = new GameScene('GameScene');
+        this.sceneManager.registerScene(gameScene);
+
+        const mapScene = new MapScene('MapScene');
+        this.sceneManager.registerScene(mapScene);
+
+        this.sceneManager.switchScene("GameScene");
+>>>>>>> 6f0ad6d6df1c54f3b869a9261bcfed324bbfebf9
     }
 
     private startGameLoop() {

@@ -13,18 +13,22 @@
 |   |   |-- GameElements/
 |   |   |   |-- Player.ts # 玩家角色代码
 |   |   |   |-- Enemy.ts  # 敌人角色代码
+|   |   |   |-- Platform.ts # 平台代码
 |   |   |   |-- ...
 |   |   |
 |   |   |-- index.ts      # 导入所有组件，便于统一管理
 |   |
 |   |-- scenes/           # 游戏场景代码
-|   |   |-- MainMenu.ts   # 主菜单场景
+|   |   |-- CharacterSelectionScene.ts # 角色选择场景
 |   |   |-- GameScene.ts  # 游戏主场景
-|   |   |-- Settings.ts   # 设置场景
-|   |   |-- ...
+|   |   |-- MapScene.ts   # 地图场景
+|   |   |-- StartScene.ts # 开始场景
 |   |   |-- index.ts      # 导入所有场景，便于统一管理
 |   |
 |   |-- services/         # 游戏服务代码，如网络请求、数据存储等
+|   |   |-- AssetLoader.ts
+|   |   |-- DynamicComponentFactory.ts
+|   |   |-- LoadResource.ts
 |   |   |-- NetworkService.ts
 |   |   |-- StorageService.ts
 |   |   |-- ...
@@ -34,25 +38,103 @@
 |   |   |-- SceneManager.ts # 场景管理器
 |   |   |-- UIManager.ts  # UI管理器
 |   |   |-- ...
+|   |   |
+|   |   |-- battle/
+|   |   |   |-- BattleEngine.ts
+|   |   |   |-- Types.ts
+|   |   |   |-- Worker.ts
+|   |   |
+|   |   |-- camera/
+|   |   |   |-- Camera2D.ts
+|   |   |
+|   |   |-- core/
+|   |   |   |-- common/
+|   |   |   |   |-- Vector2.ts
+|   |   |   |
+|   |   |   |-- objects/
+|   |   |   |   |-- AnimationComponent.ts
+|   |   |   |   |-- AudioComponent.ts
+|   |   |   |   |-- AudioComponentConfig.ts
+|   |   |   |   |-- AudioSource.ts
+|   |   |   |   |-- Clickable.ts
+|   |   |   |   |-- Collider.ts
+|   |   |   |   |-- ColliderComponent.ts
+|   |   |   |   |-- ColliderComponentConfig.ts
+|   |   |   |   |-- Component.ts
+|   |   |   |   |-- ComponentConfig.ts
+|   |   |   |   |-- GameObject.ts
+|   |   |   |   |-- GameObjectConfig.ts
+|   |   |   |   |-- ImageRenderConfig.ts
+|   |   |   |   |-- MapNode.ts
+|   |   |   |   |-- NodeGraphRenderComponent.ts
+|   |   |   |   |-- RenderComponent.ts
+|   |   |   |   |-- SpriteComponent.ts
+|   |   |   |   |-- SpriteComponentConfig.ts
+|   |   |   |   |-- TextRenderConfig.ts
+|   |   |   |   |-- Transform.ts
+|   |   |   |
+|   |   |   |-- tools/
+|   |   |   |   |-- ComponentFactory.ts
+|   |   |
+|   |   |-- dataManager/
+|   |   |   |-- DataManager.ts
+|   |   |
+|   |   |-- engines/
+|   |   |   |-- AIEngine.ts
+|   |   |   |-- AnimationEngine.ts
+|   |   |   |-- AudioEngine.ts
+|   |   |   |-- NetworkingEngine.ts
+|   |   |   |-- ScriptingEngine.ts
+|   |   |
+|   |   |-- events/
+|   |   |   |-- EventDispatcher.ts
+|   |   |   |-- EventListener.ts
+|   |   |   |-- InputHandler.ts
+|   |   |
+|   |   |-- physicsEngine/
+|   |   |   |-- index.js
+|   |   |   |
+|   |   |   |-- box2d/
+|   |   |   |   |-- CollisionDetector.js
+|   |   |   |   |-- Obj2d.js
+|   |   |   |   |-- ResolveElastic.js
+|   |   |   |   |-- World2d.js
+|   |   |   |
+|   |   |   |-- common/
+|   |   |   |   |-- Vec2.js
+|   |   |
+|   |   |-- renderer/
+|   |   |   |-- ButtonRenderComponent.ts
+|   |   |   |-- CanvasManager.ts
+|   |   |   |-- ImageRenderComponent.ts
+|   |   |   |-- ImageRenderer.js
+|   |   |   |-- RectangleRenderer.js
+|   |   |   |-- RenderingEngine.ts
+|   |   |   |-- TextRenderComponent.ts
+|   |   |   |-- TextRenderer.ts
 |   |
 |   |-- utils/            # 工具函数和常量
-|   |   |-- MathUtils.ts  # 数学工具函数
+|   |   |-- CommonUtils.ts  # 数学工具函数
 |   |   |-- Constants.ts  # 常量定义
-|   |   |-- ...
+|   |   |-- FreeList.ts  # 内存池实现
+|   |   |-- InputHandler.ts  # 输入处理
+|   |   |-- KeyConstants.ts  # 键盘常量定义
 |   |
 |   |-- index.ts          # 应用入口文件
 |
 |-- public/
 |   |-- index.html        # HTML入口文件
 |   |-- favicon.ico       # 网页图标
-|   |-- ...
+|   |-- main.css          # 样式文件
+|   |-- config.json       # 配置文件
+|   |-- MainMenuUiConfig.json # 主菜单UI配置
+|   |-- scenes.json       # 场景配置
 |
 |-- .gitignore            # Git忽略文件配置
 |-- package.json          # Node.js项目配置
 |-- tsconfig.json         # TypeScript编译配置
 |-- webpack.config.js     # Webpack打包配置
 |-- README.md             # 项目说明文档
-|-- ...
 Transform.ts： 创建一个Transform类，用于管理游戏对象的位置、旋转和缩放。它可以包含Vector2或Vector3类型的position、rotation和scale属性。
 
 Component.ts： 创建一个Component基类，用于表示附加到GameObject的可扩展功能。每个组件都有自己的更新逻辑，可以访问并影响GameObject的属性。

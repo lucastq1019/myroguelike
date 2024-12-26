@@ -73,6 +73,9 @@ export default class BattleEngine {
         for (const action of actions) {
             this.worker.postMessage({ type: 'action', data: action });
         }
+        // 恢复战斗引擎
+        this.worker.postMessage({ type: 'update', data: state.entities });
+        this.worker.postMessage({ type: 'resumeBattle', data: {} });
     }
 
     setInputPhaseCallback(callback: (entityId: number) => void) {

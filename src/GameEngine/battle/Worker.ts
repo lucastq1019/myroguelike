@@ -24,6 +24,9 @@ self.onmessage = (event) => {
         case 'startBattle':
             startBattle();
             break;
+        case 'resumeBattle':
+            resumeBattle();
+            break;
         default:
             console.warn('Unknown message type:', message.type);
     }
@@ -33,14 +36,12 @@ function initializeState(entities: EntityType[]) {
     state.entities = entities;
     state.actionQueue = [...entities];
     state.actionQueue.sort((a, b) => b.speed - a.speed); // 按速度排序
-
-    // startBattle();
 }
 
 function startBattle() {
     state.maxLoop = 100;
     console.log('state', state)
-    if(!state.intervalId){
+    if (!state.intervalId) {
         state.intervalId = setInterval(updateActions, 1000 / 60); // 每秒60帧
     }
 }
@@ -55,7 +56,6 @@ function updateActions() {
     if (state.isInputPhase) {
         console.log('Skipping battle logic in input phase');
         return; // 如果是指令输入阶段，则不执行战斗逻辑
-
     }
 
     for (let entity of state.actionQueue) {
@@ -75,7 +75,6 @@ function updateActions() {
     }
 
     self.postMessage({ type: 'update', data: state });
-
 }
 
 function performAction(entity: EntityType) {
@@ -108,4 +107,7 @@ function endBattle() {
 function updateState(entities: EntityType[]) {
     // 更新状态，例如角色移动、技能释放等
     state.entities = entities;
+}
+function resumeBattle() {
+   state.isInputPhase = false;
 }
