@@ -1,5 +1,4 @@
 import Component from "../core/objects/Component";
-import RenderComponent from "../core/objects/RenderComponent";
 
 class Scene {
     private components: Component[];
@@ -61,7 +60,7 @@ class Scene {
      */
     handleKeyboardEvent(event: KeyboardEvent): void {
         // 在此处处理键盘事件
-        console.log(event)
+        console.log(event);
     }
 
     /**
@@ -71,16 +70,13 @@ class Scene {
      */
     handleMouseEvent(event: MouseEvent): void {
         // 在此处处理鼠标事件
-        console.log(event)
-        this.getComponents().forEach(component => {
-            
-        })
+        console.log(event);
     }
 
     /**
- * 获取场景中的所有组件。
- * @returns 组件数组的浅拷贝。
- */
+     * 获取场景中的所有组件。
+     * @returns 组件数组的浅拷贝。
+     */
     getComponents(): Component[] {
         return [...this.components];
     }
@@ -93,10 +89,6 @@ class Scene {
         for (const component of this.components) {
             component.update(dt);
         }
-    }
-    // 新增方法：获取需要渲染的组件
-    getRenderComponents(): Component[] {
-        return this.components.filter(component => component instanceof RenderComponent);
     }
 }
 

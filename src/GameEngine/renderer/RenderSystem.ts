@@ -1,39 +1,27 @@
+// RenderSystem.ts
 import CanvasManager from './CanvasManager';
 import RenderComponent from '../core/objects/RenderComponent';
+import EntityManager from '../ecs/EntityManager';
+import System from '../ecs/System';
 import GameEngine from '../GameEngine';
-import Camera2D from '../camera/Camera2D';
-import SceneManager from '../sceneManager/SceneManager';
 
-class RenderingEngine {
-    private gameEngine: GameEngine;
+class RenderSystem extends System {
     private canvasManager: CanvasManager;
-    private renderComponents: RenderComponent[];
-    private activeCamera: Camera2D | null = null;
+    private screenWidth: number;
+    private screenHeight: number;
 
-    constructor(gameEngine: GameEngine) {
-        this.gameEngine = gameEngine;
+    constructor(entityManager: EntityManager) {
+        super(entityManager);
         this.canvasManager = new CanvasManager();
-        this.renderComponents = [];
-        this.activeCamera = this.gameEngine.getActiveCamera();
-        console.log(this)
+        this.screenWidth = GameEngine.getScreenWidth();
+        this.screenHeight = GameEngine.getScreenHeight();
     }
 
-    addRenderComponent(component: RenderComponent) {
-        this.renderComponents.push(component);
+    getRequiredComponents(): string[] {
+        return ['RenderComponent'];
     }
 
-    removeRenderComponent(component: RenderComponent) {
-        const index = this.renderComponents.indexOf(component);
-        if (index !== -1) {
-            this.renderComponents.splice(index, 1);
-        }
-    }
-
-    setActiveCamera(camera: Camera2D) {
-        this.activeCamera = camera;
-    }
-
-    updateViewMatrix(viewMatrix: number[][]) {
+    updateViewMatrix(viewMatrix: number[][]): void {
         if (this.canvasManager.getCtx() && viewMatrix.length === 3 && viewMatrix[0].length === 3) {
             this.canvasManager.getCtx()!.transform(
                 viewMatrix[0][0],
@@ -48,34 +36,41 @@ class RenderingEngine {
         }
     }
 
-    render() {
+    render(): void {
         this.canvasManager.clear();
 
-        if (this.activeCamera) {
-            const viewMatrix = this.activeCamera.getViewMatrix();
+        const activeCamera = GameEngine.getInstance().getActiveCamera();
+        if (activeCamera) {
+            const viewMatrix = activeCamera.getViewMatrix();
             this.updateViewMatrix(viewMatrix);
-            this.gameEngine.getSceneManager().getCurrentScene()?.getRenderComponents().forEach((renderComponent) => {
-                if (renderComponent instanceof RenderComponent) {
+
+            this.entityManager.getAllEntities().forEach(entity => {
+                const renderComponent = entity.getComponent<RenderComponent>('RenderComponent');
+                if (renderComponent) {
                     renderComponent.render(this.canvasManager);
                 }
             });
-            const size = GameEngine.getScreenHeight()*.45;
-            const offsetX   =(GameEngine.getScreenWidth()*.5-size*2)/6
-            const offsetY   =(GameEngine.getScreenWidth()*.5-size*2)/6
-            this.drawLines(2,size,offsetX,offsetY);
 
-            const offsetX2   =(GameEngine.getScreenWidth()*.5-size*2)/6*5 +GameEngine.getScreenWidth()*.5
-            const offsetY2   =(GameEngine.getScreenWidth()*.5-size*2)/6
-            this.drawLines(2,size,offsetX2,offsetY2);
+            const size = this.screenHeight * 0.45;
+            const offsetX = (this.screenWidth * 0.5 - size * 2) / 6;
+            const offsetY = (this.screenWidth * 0.5 - size * 2) / 6;
+            this.drawLines(2, size, offsetX, offsetY);
+
+            const offsetX2 = (this.screenWidth * 0.5 - size * 2) / 6 * 5 + this.screenWidth * 0.5;
+            const offsetY2 = (this.screenWidth * 0.5 - size * 2) / 6;
+            this.drawLines(2, size, offsetX2, offsetY2);
+
             // 绘制相机视野的矩形
             this.drawCameraBounds();
         } else {
             console.warn('No active camera found, rendering skipped.');
         }
     }
-    private drawLines(gridSize: number, cellSize: number, offsetX: number = 0, offsetY: number = 0) {
+
+    private drawLines(gridSize: number, cellSize: number, offsetX: number = 0, offsetY: number = 0): void {
         gridSize = gridSize || 10;
-        if (!this.activeCamera) return;
+        const activeCamera = GameEngine.getInstance().getActiveCamera();
+        if (!activeCamera) return;
 
         const ctx = this.canvasManager.getCtx();
         if (!ctx) return;
@@ -104,13 +99,14 @@ class RenderingEngine {
         ctx.restore(); // 恢复画布状态
     }
 
-    private drawCameraBounds() {
-        if (!this.activeCamera) return;
+    private drawCameraBounds(): void {
+        const activeCamera = GameEngine.getInstance().getActiveCamera();
+        if (!activeCamera) return;
 
         const ctx = this.canvasManager.getCtx();
         if (!ctx) return;
 
-        const { position, size } = this.activeCamera;
+        const { position, size } = activeCamera;
 
         ctx.strokeStyle = 'red'; // 设置边框颜色
         ctx.lineWidth = 2; // 设置边框宽度
@@ -123,6 +119,10 @@ class RenderingEngine {
         ctx.closePath();
         ctx.stroke();
     }
+
+    update(dt: number): void {
+        this.render();
+    }
 }
 
-export default RenderingEngine;
+export default RenderSystem;
