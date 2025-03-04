@@ -1,13 +1,9 @@
-import Scene from '../sceneManager/Scene';
-
 export default class SceneComponent {
-    private scene: Scene;
-
-    constructor(scene: Scene) {
-        this.scene = scene;
-    }
-
-    getScene(): Scene {
-        return this.scene;
+    // 增加属性变更回调
+    public onPropertyChange: (key: string, value: any) => void = () => {};
+    
+    setProperty(key: string, value: any) {
+        this.editableProperties[key] = value;
+        this.onPropertyChange(key, value);
     }
 }
