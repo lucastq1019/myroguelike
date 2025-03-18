@@ -2,31 +2,35 @@ import Component from './Component';
 
 class Entity {
     private id: number;
-    private components: { [key: string]: Component };
+    // 显式初始化并优化类型定义
+    private components: Record<string, Component> = {};
 
     constructor(id: number) {
         this.id = id;
+        // 确保组件存储被正确初始化
         this.components = {};
     }
-
-    getId(): number {
-        return this.id;
+    
+    // 添加类型安全的组件操作
+    addComponent<T extends Component>(component: T): void {
+        const typeName = component.constructor.name;
+        this.components[typeName] = component;
+        
+        // 触发组件生命周期
+        if (component instanceof SceneComponent) {
+            component.onLoad();
+        }
     }
 
-    addComponent(component: Component): void {
-        this.components[component.constructor.name] = component;
+    getComponent<T extends Component>(type: new () => T): T | null {
+        const typeName = type.prototype.constructor.name;
+        return this.components[typeName] as T || null;
     }
 
-    removeComponent(componentName: string): void {
-        delete this.components[componentName];
-    }
-
+    // 保留原有基于字符串的方法
     hasComponent(componentName: string): boolean {
-        return componentName in this.components;
-    }
-
-    getComponent<T extends Component>(componentName: string): T | null {
-        return this.components[componentName] as T || null;
+        return componentName in this.components 
+            || Object.values(this.components).some(c => c.constructor.name === componentName);
     }
 }
 

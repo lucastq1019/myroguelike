@@ -36,6 +36,13 @@ class RenderSystem extends System {
         }
     }
 
+    // 添加编辑器渲染开关
+    private editorRenderFlags = {
+        showBoundingBoxes: true,
+        showTransformGizmos: true,
+        showPhysicsDebug: false
+    };
+
     render(): void {
         this.canvasManager.clear();
 

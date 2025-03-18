@@ -262,6 +262,14 @@ class GameEngine {
         // 返回游戏引擎的单例实例
         return GameEngine._instance;
     }
+
+    // 在GameEngine类末尾添加：
+private editorUI: EditorUI | null = null;
+
+public enableEditorMode() {
+    this.editorUI = new EditorUI(this);
+}
 }
 
 export default GameEngine;
+

@@ -1,9 +1,5 @@
-import ComponentConfig from './ComponentConfig';
-import GameObject from './GameObject';
+import type { ComponentConfig } from '../types';  // 更新类型引用路径
 
-/**
- * 抽象类 Component 表示游戏中的组件
- */
 export default abstract class Component {
   name: string;
   gameObject: GameObject;

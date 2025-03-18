@@ -30,6 +30,38 @@ class EntityManager {
         }
         return null;
     }
+    
+    // 跟踪变更的实体
+    private changedEntities = new Set<string>();
+    
+    // 标记实体变更
+    public markEntityChanged(entityId: string) {
+        this.changedEntities.add(entityId);
+    }
+    
+    // 获取变更集
+    public getChangedEntities(): Entity[] {
+        return Array.from(this.changedEntities).map(id => this.getEntityById(id));
+    }
+    
+    // 清空变更记录
+    public clearChangeRecords() {
+        this.changedEntities.clear();
+    }
+    
+    // 添加类型安全查询
+    getAllWithComponent<T extends Component>(type: new () => T): Entity[] {
+        return this.entities.filter(e => 
+            e.getComponent(type) !== null
+        );
+    }
+    
+    // 兼容旧版字符串查询
+    getEntitiesWithComponent(componentName: string): Entity[] {
+        return this.entities.filter(e => 
+            e.hasComponent(componentName)
+        );
+    }
 }
 
 export default EntityManager;
