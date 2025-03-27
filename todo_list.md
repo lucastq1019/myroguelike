@@ -1,8 +1,12 @@
 # 游戏开发待办事项列表
 
 ## 渲染部分
-- [ ] 定义渲染组件或函数，封装对 `GameEngine.renderingEngine` 的调用
-- [ ] 使用 `renderingEngine` 绘制游戏元素，如精灵、背景、文字等
+- [x] 定义渲染组件(ImageRenderComponent)
+- [ ] 实现精灵动画渲染
+
+## 相机控制部分
+- [x] 完成Camera2D基础功能
+- [ ] 实现相机跟随效果
 
 ## 物理部分
 - [ ] 创建对应的物理对象，使用 `GameEngine.physicsEngine` 实现碰撞检测和运动模拟

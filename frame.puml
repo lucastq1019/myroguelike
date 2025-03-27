@@ -1,6 +1,6 @@
 @startuml
 
-' 定义核心类和接口
+' 核心引擎类
 class GameEngine {
     +static getInstance(): GameEngine
     +getEventDispatcher(): EventDispatcher
@@ -8,10 +8,12 @@ class GameEngine {
     +getRenderingEngine(): RenderingEngine
     +getSceneManager(): SceneManager
     +getInputHandler(): InputHandler
+    +getDataManager(): DataManager
     +static getScreenWidth(): number
     +static getScreenHeight(): number
 }
 
+' 核心系统
 class EntityManager {
     +createEntity(): Entity
     +getAllEntities(): Entity[]
@@ -22,21 +24,35 @@ class SystemManager {
     +update(dt: number): void
 }
 
-class Scene {
-    +load(): void
-    +onUnload(): void
-    +addComponent(component: Component): void
-    +removeComponent(component: Component): boolean
-    +clearComponents(): void
-    +handleKeyboardEvent(event: KeyboardEvent): void
-    +handleMouseEvent(event: MouseEvent): void
-    +getComponents(): Component[]
+' 渲染系统
+class RenderingEngine {
+    +render(): void
+    +setActiveCamera(camera: Camera2D): void
+}
+
+class CanvasManager {
+    +getCtx(): CanvasRenderingContext2D
+    +clear(): void
+}
+
+' 组件系统
+class Component {
     +update(dt: number): void
-    +getRenderComponents(): Component[]
+}
+
+class RenderComponent {
+    +render(canvasManager: CanvasManager): void
 }
 
 class SceneComponent {
     +getScene(): Scene
+}
+
+' 场景管理
+class Scene {
+    +load(): void
+    +unload(): void
+    +update(dt: number): void
 }
 
 class SceneManager {
@@ -44,76 +60,59 @@ class SceneManager {
     +switchScene(sceneName: string): void
 }
 
-class RenderingEngine {
-    +render(): void
-    +setActiveCamera(camera: Camera2D): void
+' 引擎子系统
+class AIEngine {
+    +update(dt: number): void
 }
 
-class EventDispatcher {
-    +dispatchEvent(event: any): void
+class ScriptingEngine {
+    +update(dt: number): void
 }
 
+' 输入系统
 class InputHandler {
-    +handleInput(event: any): void
+    +isKeyPressed(key: string): boolean
+    +isMouseButtonPressed(button: number): boolean
+    +getMousePosition(): {x: number, y: number}
 }
 
+' 数据管理
+class DataManager {
+    +loadData(filePath: string): Promise<GameData>
+    +saveData(data: any): void
+}
+
+' 相机系统
 class Camera2D {
     +position: Vector2
     +scale: number
     +size: Vector2
-    +name: string
-    +gameObject: GameObject
-}
-
-class PhysicsSystem {
-    +update(dt: number): void
-}
-
-class ScriptingSystem {
-    +update(dt: number): void
-}
-
-class AnimationSystem {
-    +update(dt: number): void
-}
-
-class AISystem {
-    +update(dt: number): void
-}
-
-class NetworkingSystem {
-    +update(dt: number): void
 }
 
 ' 定义关联关系
 GameEngine --> EntityManager : "1"
 GameEngine --> SystemManager : "1"
 GameEngine --> RenderingEngine : "1"
-GameEngine --> EventDispatcher : "1"
-GameEngine --> Camera2D : "1"
 GameEngine --> SceneManager : "1"
 GameEngine --> InputHandler : "1"
+GameEngine --> DataManager : "1"
 
 EntityManager --> Entity : "*"
 SystemManager --> System : "*"
 
-Scene --> Component : "*"
-Scene --> RenderComponent : "<|.."
-
-SceneComponent --> Scene : "1"
-
 SceneManager --> Scene : "*"
-
+RenderingEngine --> CanvasManager : "1"
 RenderingEngine --> Camera2D : "1"
 
-EventDispatcher --> Event : "<|.."
+' 组件继承关系
+Component <|-- RenderComponent
+Component <|-- SceneComponent
 
-InputHandler --> InputEvent : "<|.."
+' 引擎子系统关系
+GameEngine --> AIEngine : "1"
+GameEngine --> ScriptingEngine : "1"
 
-PhysicsSystem --> Component : "<|.."
-ScriptingSystem --> Component : "<|.."
-AnimationSystem --> Component : "<|.."
-AISystem --> Component : "<|.."
-NetworkingSystem --> Component : "<|.."
+' 渲染组件实现
+RenderComponent ..|> IRenderable
 
 @enduml

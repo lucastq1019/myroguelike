@@ -29,12 +29,15 @@ import NetworkingSystem from './ecs/NetworkingSystem';
 import SceneManagerSystem from './sceneManager/SceneManagerSystem';
 // 引入场景加载系统类，负责加载游戏中的场景
 import SceneLoaderSystem from './sceneManager/SceneLoaderSystem';
+import Entity from './ecs/Entity';
+import EcsComponent from './ecs/EcsComponent';
+
 
 /**
  * 游戏引擎类
  * 该类是游戏引擎的核心，负责初始化游戏的各个系统，管理游戏循环，以及提供对游戏系统的访问接口。
  */
-class GameEngine {
+export default class GameEngine {
 
     // 单例模式的实例变量，确保游戏引擎只有一个实例
     private static _instance: GameEngine | null = null;
@@ -179,7 +182,7 @@ class GameEngine {
      * 获取渲染系统
      * @returns {RenderSystem} 渲染系统实例
      */
-    getRenderSystem(): RenderSystem {
+    public getRenderingEngine(): RenderSystem {
         return this.renderSystem;
     }
 
@@ -263,13 +266,26 @@ class GameEngine {
         return GameEngine._instance;
     }
 
-    // 在GameEngine类末尾添加：
-private editorUI: EditorUI | null = null;
+    // 添加实体管理方法
+    public createEntity(): Entity {
+        const entity = this.entityManager.createEntity();
+        this.eventDispatcher.dispatchEvent({
+            type: 'entityCreated',
+            entity: entity
+        });
+        return entity;
+    }
 
-public enableEditorMode() {
-    this.editorUI = new EditorUI(this);
-}
-}
+    public getEntityById(id: number): Entity | null {
+        return this.entityManager.getEntityById(id);
+    }
 
-export default GameEngine;
+    public getAllEntities(): Entity[] {
+        return this.entityManager.getAllEntities();
+    }
+
+    public getEntitiesWithComponent<T extends EcsComponent>(type: new () => T): Entity[] {
+        return this.entityManager.getAllWithComponent(type);
+    }
+}
 

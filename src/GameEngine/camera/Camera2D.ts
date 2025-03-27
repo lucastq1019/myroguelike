@@ -1,40 +1,47 @@
-import Component from "../core/objects/Component";
 import Vector2 from "../core/common/Vector2";
-import ComponentConfig from "../core/objects/ComponentConfig";
-import GameObject from "../core/objects/GameObject";
+import EcsComponent from "../ecs/EcsComponent";
+import Entity from "../ecs/Entity";
 
-/**
- * 相机组件配置 
- */
-interface Camera2DConfig extends ComponentConfig {
+interface Camera2DConfig {
   position?: Vector2;
   scale?: number;
   size?: Vector2;
-  target?: GameObject; // 跟踪的目标对象
+  targetEntityId?: string; // 改为使用实体ID跟踪目标
 }
 
-/**
- * 2D 相机组件
- */
-class Camera2D extends Component {
+class Camera2D extends EcsComponent {
   position: Vector2;
   scale: number;
   size: Vector2;
-  target: GameObject | null; // 跟踪的目标对象
-  viewMatrix: number[][]; // 缓存的视图矩阵
+  viewMatrix: number[][];
+  private targetEntityId: string | null = null;
 
-  constructor(config: Camera2DConfig = {
-    onClick: function (): void {
-    },
-    name: "",
-    gameObject: null
-  }) {
-    super(config);
+  constructor(config: Camera2DConfig = {}) {
+    super('Camera2D'); // 添加组件名称
     this.position = config.position ?? new Vector2(0, 0);
     this.scale = config.scale ?? 1;
     this.size = config.size ?? new Vector2(800, 600);
-    this.target = config.target ?? null;
+    this.targetEntityId = config.targetEntityId ?? null;
     this.viewMatrix = this.calculateViewMatrix();
+  }
+
+  // 改为通过实体ID设置目标
+  setTargetEntity(entity: Entity | null): void {
+    this.targetEntityId = entity?.id ?? null;
+  }
+
+  // 添加ECS组件必需的update方法
+  update(dt: number): void {
+    if (this.targetEntityId) {
+      const target = this.entity?.manager?.getEntity(this.targetEntityId);
+      if (target) {
+        const transform = target.getComponent<Transform>('Transform');
+        if (transform) {
+          this.setPosition(transform.position);
+        }
+      }
+    }
+    this.updateViewMatrix();
   }
 
   /**
@@ -52,49 +59,6 @@ class Camera2D extends Component {
    */
   setScale(scale: number): void {
     this.scale = scale;
-    this.updateViewMatrix();
-  }
-
-  /**
-   * 设置相机跟踪的目标对象
-   * @param target 跟踪的目标对象
-   */
-  setTarget(target: GameObject | null): void {
-    this.target = target;
-  }
-
-  /**
-   * 平滑移动到指定位置
-   * @param targetPosition 目标位置
-   * @param duration 移动时间（毫秒）
-   */
-  smoothMoveTo(targetPosition: Vector2, duration: number): void {
-    const startTime = Date.now();
-    const startPosition = this.position.clone();
-
-    const move = () => {
-      const elapsed = Date.now() - startTime;
-      if (elapsed >= duration) {
-        this.setPosition(targetPosition);
-        return;
-      }
-      const t = elapsed / duration;
-      const newPosition = startPosition.lerp(targetPosition, t);
-      this.setPosition(newPosition);
-      requestAnimationFrame(move);
-    };
-
-    move();
-  }
-
-  /**
-   * 更新相机状态
-   * @param dt 时间间隔
-   */
-  update(dt: number): void {
-    if (this.target) {
-      this.setPosition(this.target.position);
-    }
     this.updateViewMatrix();
   }
 
@@ -120,6 +84,24 @@ class Camera2D extends Component {
 
   private updateViewMatrix(): void {
     this.viewMatrix = this.calculateViewMatrix();
+  }
+
+  // 添加序列化方法用于ECS系统
+  serialize(): any {
+    return {
+      position: this.position.serialize(),
+      scale: this.scale,
+      size: this.size.serialize(),
+      targetEntityId: this.targetEntityId
+    };
+  }
+
+  // 添加反序列化方法
+  deserialize(data: any): void {
+    this.position.deserialize(data.position);
+    this.scale = data.scale;
+    this.size.deserialize(data.size);
+    this.targetEntityId = data.targetEntityId;
   }
 }
 

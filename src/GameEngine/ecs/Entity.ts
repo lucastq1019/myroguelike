@@ -1,37 +1,42 @@
-import Component from './Component';
-import SceneComponent from './SceneComponent';
+import EcsComponent from './EcsComponent';
 
 class Entity {
     private id: number;
-    // 显式初始化并优化类型定义
-    private components: Record<string, Component> = {};
+    private components: Map<string, EcsComponent> = new Map();
+    private componentTypes: Map<Function, string> = new Map();
 
     constructor(id: number) {
         this.id = id;
-        // 确保组件存储被正确初始化
-        this.components = {};
     }
-    
-    // 添加类型安全的组件操作
-    addComponent<T extends Component>(component: T): void {
+
+    addComponent<T extends EcsComponent>(component: T): T {
         const typeName = component.constructor.name;
-        this.components[typeName] = component;
+        const type = component.constructor;
         
-        // 触发组件生命周期
-        if (component instanceof SceneComponent) {
-            component.onLoad();
-        }
+        component.entityId = this.id;
+        this.components.set(typeName, component);
+        this.componentTypes.set(type, typeName);
+        
+        return component;
     }
 
-    getComponent<T extends Component>(type: new () => T): T | null {
-        const typeName = type.prototype.constructor.name;
-        return this.components[typeName] as T || null;
+    getComponent<T extends EcsComponent>(type: new () => T): T | null {
+        const typeName = this.componentTypes.get(type);
+        return typeName ? (this.components.get(typeName) as T) || null : null;
     }
 
-    // 保留原有基于字符串的方法
     hasComponent(componentName: string): boolean {
-        return componentName in this.components 
-            || Object.values(this.components).some(c => c.constructor.name === componentName);
+        return this.components.has(componentName);
+    }
+
+    getId(): number {
+        return this.id;
+    }
+
+    getAllComponents<T extends EcsComponent>(): T[] {
+        return Array.from(this.components.values()).filter(
+            (comp): comp is T => comp instanceof EcsComponent
+        );
     }
 }
 
