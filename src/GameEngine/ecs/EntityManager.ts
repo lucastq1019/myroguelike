@@ -1,6 +1,7 @@
 import Entity from './Entity';
 import Scene from '../sceneManager/Scene';
 import SceneComponent from './SceneComponent';
+import Component from './Component';
 
 class EntityManager {
     private entities: Entity[];

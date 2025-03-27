@@ -1,4 +1,5 @@
 import Component from './Component';
+import SceneComponent from './SceneComponent';
 
 class Entity {
     private id: number;

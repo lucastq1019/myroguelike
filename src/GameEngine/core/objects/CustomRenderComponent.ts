@@ -1,4 +1,4 @@
-import Vector2 from '../common/Vector2';
+import Vector2 from '../core/common/Vector2';
 
 interface CustomRenderConfig {
     position: Vector2;
