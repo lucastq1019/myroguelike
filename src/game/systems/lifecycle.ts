@@ -8,8 +8,9 @@ import { Position, Velocity, Sprite } from '../../GameEngine/ecs/components';
 import {
   Health, BulletTag, MeleeLifetime, Afterimage, HitFlash, Collider,
   Splitter, EnemyTag, EnemyType, ContactDamage, Chase, Patrol,
-  RigidBody, dynamicBody, Circle,
+  RigidBody, dynamicBody, Circle, Pickup,
 } from '../components';
+import { spawnDropsFromEnemy } from './pickup';
 
 /** 分裂出的小怪：地面追击型（不再携带 Splitter，防止无限分裂） */
 function spawnSplitChild(world: World, x: number, y: number, s: Splitter): void {
@@ -34,12 +35,17 @@ export const LifecycleSystem = {
     const toDestroy: Entity[] = [];
     const toRemoveFlash: number[] = [];
 
-    // 生命耗尽（销毁前处理分裂）
+    // 生命耗尽（销毁前处理分裂 + 掉落）
     const healths = world.dense(Health);
     const healthEntities = world.denseEntities(Health);
     for (let i = 0; i < healths.length; i++) {
       if (healths[i].current <= 0) {
         const idx = healthEntities[i];
+        // 敌人死亡 → 掉落（金币/血包/增益）
+        if (world.storage.has(idx, EnemyTag)) {
+          const pos = world.storage.get(idx, Position);
+          if (pos) spawnDropsFromEnemy(world, pos.x, pos.y, healths[i].max);
+        }
         const splitter = world.storage.get(idx, Splitter);
         if (splitter && splitter.generation === 0) {
           const pos = world.storage.get(idx, Position);

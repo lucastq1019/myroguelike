@@ -25,6 +25,7 @@ const playerBuf: number[] = [];
 /**
  * 暴击判定：按玩家 CritChance 决定是否暴击。
  * 暴击造成双倍伤害。返回最终伤害与是否暴击。
+ * 同时乘上临时增益的伤害倍率（__buffDamageMul，如「狂暴」）。
  */
 function rollCrit(
   world: World,
@@ -33,7 +34,9 @@ function rollCrit(
 ): { dmg: number; isCrit: boolean } {
   const crit = playerIdx !== undefined ? world.storage.get(playerIdx, CritChance) : undefined;
   const isCrit = crit !== undefined && crit.chance > 0 && Math.random() < crit.chance;
-  return { dmg: isCrit ? baseDamage * 2 : baseDamage, isCrit };
+  const buffMul = (globalThis as any).__buffDamageMul ?? 1;
+  const dmg = (isCrit ? baseDamage * 2 : baseDamage) * buffMul;
+  return { dmg, isCrit };
 }
 
 /** 吸血：玩家命中敌人后按 Lifesteal.perHit 回复生命（不超过上限） */

@@ -15,9 +15,11 @@ import { Position, Velocity, Sprite } from '../GameEngine/ecs/components';
 import {
   Health, Collider, PlayerTag, EnemyTag, Portal, Invincible, Knockback,
   RigidBody, dynamicBody, Circle, Facing, Locomotion, JumpState, MeleeAttack, DashState,
-  ComboState, ComboCounter, Weapon, Lifesteal, CritChance,
+  ComboState, ComboCounter, Weapon, Lifesteal, CritChance, Buff,
 } from './components';
 import { rollUpgrades, Upgrade } from './resources/Upgrades';
+import { getBuffDef } from './resources/Pickups';
+import { applyUnlocks } from './resources/Unlocks';
 import { createPlayerControlSystem } from './systems/playerControl';
 import { createLocomotionSystem } from './systems/locomotion';
 import { createMeleeSystem } from './systems/melee';
@@ -29,12 +31,26 @@ import { CollisionSystem } from './systems/collision';
 import { KnockbackSystem } from './systems/knockback';
 import { InvincibilitySystem } from './systems/invincibility';
 import { LifecycleSystem } from './systems/lifecycle';
+import { PickupSystem, clearBuffs } from './systems/pickup';
 import { generateLevel, spawnPortal } from './systems/level';
 import { createPhysicsSystem } from '../GameEngine/physics';
 import { audio } from './audio';
 
 /** 重力加速度（像素/秒²），横版平台向下为正 */
 const GRAVITY_Y = 2000;
+
+// ============ 升级面板：刷新 / 跳过（数值可调） ============
+/** 每层免费刷新次数（第 1 次免费） */
+const REROLL_FREE_PER_FLOOR = 1;
+/** 付费刷新基准价（第 n 次付费刷新 = REROLL_BASE_COST * n，递增） */
+const REROLL_BASE_COST = 10;
+/** 跳过升级的回血量（占最大生命比例） */
+const SKIP_HEAL_RATIO = 0.25;
+
+/** 第 n 次付费刷新的消耗（n 从 1 起，递增） */
+export function rerollCost(paidCount: number): number {
+  return REROLL_BASE_COST * paidCount;
+}
 
 export interface GameState {
   hp: number;
@@ -48,10 +64,24 @@ export interface GameState {
   combo: number;
   /** 当前连招段（1/2/3，0=未开始） */
   comboStage: number;
+  /** 本局已拾取的金币 */
+  coins: number;
+  /** 当前生效的增益（id → 剩余秒数），供 HUD 显示 */
+  buffs: { id: string; name: string; color: string; timer: number }[];
+  /** 本层剩余免费刷新次数 */
+  freeRerolls: number;
+  /** 下次刷新需要的金币（0 = 免费） */
+  rerollCost: number;
+  /** 当前金币是否足够刷新 */
+  canReroll: boolean;
+  /** 跳过升级的回血量 */
+  skipHeal: number;
 }
 
 export interface GameCallbacks {
   onStateChange: (state: GameState) => void;
+  /** 已解锁项 id 列表（新一局开始时应用） */
+  getUnlocked?: () => string[];
 }
 
 export class Game {
@@ -72,6 +102,10 @@ export class Game {
 
   private upgradeChoosing = false;
   private upgradeOptions: Upgrade[] = [];
+  /** 本层免费刷新剩余次数 */
+  private freeRerolls = REROLL_FREE_PER_FLOOR;
+  /** 本层已付费刷新次数（用于递增计价） */
+  private paidRerolls = 0;
   /** 本局最高连击（用于结算） */
   private bestCombo = 0;
 
@@ -109,6 +143,8 @@ export class Game {
       .addSystem(KnockbackSystem)
       // 7) 伤害判定（子弹/近战 × 敌人，敌人 × 玩家）
       .addSystem(CollisionSystem)
+      // 7.5) 掉落物（拾取 + 增益计时 + 回收）
+      .addSystem(PickupSystem)
       // 8) 无敌帧
       .addSystem(InvincibilitySystem)
       // 9) 生命周期（销毁死亡/过期实体）
@@ -132,6 +168,9 @@ export class Game {
     this.bestCombo = 0;
     (globalThis as any).__playerSpeedMul = 1;
     (globalThis as any).__playerMultishot = 1;
+    (globalThis as any).__buffDamageMul = 1;
+    (globalThis as any).__coins = 0;
+    clearBuffs(this.world);
 
     // 玩家
     const p = this.world.spawn();
@@ -159,6 +198,10 @@ export class Game {
     this.world.addComponent(p, RigidBody, dynamicBody(1, 0.0, 0.0, 1));
     this.world.addComponent(p, Circle, new Circle(14));
     this.playerEntity = p;
+
+    // 应用局外永久解锁（初始词条/角色属性）
+    const unlocked = this.callbacks.getUnlocked?.() ?? [];
+    if (unlocked.length > 0) applyUnlocks(this.world, p, unlocked);
 
     this.nextFloor();
     this.emitState();
@@ -276,7 +319,56 @@ export class Game {
   private enterUpgrade(): void {
     this.upgradeChoosing = true;
     this.upgradeOptions = rollUpgrades(3);
+    // 每层重置刷新次数
+    this.freeRerolls = REROLL_FREE_PER_FLOOR;
+    this.paidRerolls = 0;
     this.emitState();
+  }
+
+  /** 当前刷新消耗（0 = 免费） */
+  private currentRerollCost(): number {
+    if (this.freeRerolls > 0) return 0;
+    return rerollCost(this.paidRerolls + 1);
+  }
+
+  /** 刷新升级选项：首次免费，之后按递增价消耗金币 */
+  rerollUpgrade(): boolean {
+    if (!this.upgradeChoosing) return false;
+    const cost = this.currentRerollCost();
+    const coins = (globalThis as any).__coins ?? 0;
+    if (cost > 0 && coins < cost) {
+      this.emitState(); // 刷新状态（canReroll 等）
+      return false; // 金币不足
+    }
+
+    if (cost > 0) {
+      (globalThis as any).__coins = coins - cost;
+      this.paidRerolls += 1;
+    } else {
+      this.freeRerolls -= 1;
+    }
+    this.upgradeOptions = rollUpgrades(3);
+    audio.play('reroll');
+    this.emitState();
+    return true;
+  }
+
+  /** 跳过升级：放弃词条，回复一定比例最大生命 */
+  skipUpgrade(): boolean {
+    if (!this.upgradeChoosing) return false;
+    if (this.playerEntity) {
+      const hp = this.world.getComponent(this.playerEntity, Health);
+      if (hp) {
+        const heal = Math.round(hp.max * SKIP_HEAL_RATIO);
+        hp.current = Math.min(hp.max, hp.current + heal);
+      }
+    }
+    audio.play('pickup');
+    this.upgradeChoosing = false;
+    this.upgradeOptions = [];
+    this.nextFloor();
+    this.emitState();
+    return true;
   }
 
   chooseUpgrade(index: number): void {
@@ -307,6 +399,25 @@ export class Game {
     const maxHp = this.playerEntity ? (this.world.getComponent(this.playerEntity, Health)?.max ?? 100) : 100;
     const combo = this.playerEntity ? this.world.getComponent(this.playerEntity, ComboCounter) : undefined;
     const comboState = this.playerEntity ? this.world.getComponent(this.playerEntity, ComboState) : undefined;
+
+    // 当前增益（id → 名称/颜色/剩余时间）
+    const buffs: { id: string; name: string; color: string; timer: number }[] = [];
+    if (this.playerEntity) {
+      const buff = this.world.getComponent(this.playerEntity, Buff);
+      if (buff) {
+        const def = getBuffDef(buff.id);
+        buffs.push({
+          id: buff.id,
+          name: def?.name ?? buff.id,
+          color: def?.color ?? '#c678dd',
+          timer: Math.max(0, buff.timer),
+        });
+      }
+    }
+
+    const coins = (globalThis as any).__coins ?? 0;
+    const cost = this.upgradeChoosing ? this.currentRerollCost() : 0;
+
     this.callbacks.onStateChange({
       hp: Math.max(0, Math.round(hp)),
       maxHp,
@@ -317,6 +428,12 @@ export class Game {
       upgradeOptions: this.upgradeOptions,
       combo: combo?.count ?? 0,
       comboStage: comboState?.comboIndex ?? 0,
+      coins,
+      buffs,
+      freeRerolls: this.freeRerolls,
+      rerollCost: cost,
+      canReroll: cost === 0 || coins >= cost,
+      skipHeal: Math.round(maxHp * SKIP_HEAL_RATIO),
     });
   }
 

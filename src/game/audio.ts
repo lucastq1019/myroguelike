@@ -6,7 +6,9 @@
  *
  * 音效类型：跳跃 / 攻击 / 命中 / 受伤 / 死亡 / 升级 / 冲刺。
  */
-export type SoundName = 'jump' | 'attack' | 'hit' | 'hurt' | 'death' | 'upgrade' | 'dash' | 'land';
+export type SoundName =
+  | 'jump' | 'attack' | 'hit' | 'hurt' | 'death' | 'upgrade' | 'dash' | 'land'
+  | 'coin' | 'pickup' | 'reroll' | 'unlock';
 
 interface ToneSpec {
   type: OscillatorType;
@@ -26,6 +28,10 @@ const SPECS: Record<SoundName, ToneSpec> = {
   upgrade: { type: 'sine', freq: 520, freqEnd: 880, duration: 0.25, volume: 0.16 },
   dash: { type: 'triangle', freq: 700, freqEnd: 300, duration: 0.12, volume: 0.1 },
   land: { type: 'square', freq: 140, freqEnd: 80, duration: 0.06, volume: 0.08 },
+  coin: { type: 'square', freq: 880, freqEnd: 1320, duration: 0.09, volume: 0.1 },
+  pickup: { type: 'sine', freq: 620, freqEnd: 940, duration: 0.14, volume: 0.13 },
+  reroll: { type: 'triangle', freq: 420, freqEnd: 700, duration: 0.1, volume: 0.1 },
+  unlock: { type: 'sine', freq: 480, freqEnd: 960, duration: 0.3, volume: 0.16 },
 };
 
 export class AudioManager {

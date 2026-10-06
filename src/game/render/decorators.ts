@@ -11,7 +11,7 @@ import { Sprite, Position, Velocity } from '../../GameEngine/ecs/components';
 import {
   Invincible, Portal, Box, Platform, PlayerTag, Facing, Afterimage, DashState,
   MeleeHitbox, BulletTag, EnemyTag, HitFlash, Collider,
-  DamageNumber, HitSpark, DeathBurst,
+  DamageNumber, HitSpark, DeathBurst, Pickup,
 } from '../components';
 import { PhysicsContacts, ContactDir } from '../../GameEngine/physics';
 
@@ -253,6 +253,52 @@ export const deathBurstDecorator: SpriteDecorator = (ctx, screen, _sprite, idx, 
   return true;
 };
 
+/** 掉落物：金币（金圆）/ 血包（红十字）/ 增益（紫菱形），带脉动光晕 */
+export const pickupDecorator: SpriteDecorator = (ctx, screen, sprite, idx, world, time) => {
+  const pk = world.storage.get(idx, Pickup);
+  if (!pk) return false;
+  const r = sprite.size / 2;
+  const pulse = 1 + Math.sin(time * 6 + idx) * 0.12;
+  ctx.globalAlpha = 1;
+
+  if (pk.kind === 'coin') {
+    // 金币：金色圆 + 高光
+    ctx.fillStyle = sprite.color;
+    ctx.beginPath();
+    ctx.arc(screen.x, screen.y, r * pulse, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#fff3c4';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  } else if (pk.kind === 'heal') {
+    // 血包：方块 + 白色十字
+    ctx.fillStyle = sprite.color;
+    ctx.fillRect(screen.x - r * pulse, screen.y - r * pulse, r * 2 * pulse, r * 2 * pulse);
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2;
+    const arm = r * 0.6;
+    ctx.beginPath();
+    ctx.moveTo(screen.x - arm, screen.y);
+    ctx.lineTo(screen.x + arm, screen.y);
+    ctx.moveTo(screen.x, screen.y - arm);
+    ctx.lineTo(screen.x, screen.y + arm);
+    ctx.stroke();
+  } else {
+    // 增益：菱形 + 光晕
+    ctx.save();
+    ctx.translate(screen.x, screen.y);
+    ctx.rotate(Math.PI / 4);
+    const s = r * pulse;
+    ctx.fillStyle = sprite.color;
+    ctx.fillRect(-s, -s, s * 2, s * 2);
+    ctx.strokeStyle = '#e6b8ff';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(-s, -s, s * 2, s * 2);
+    ctx.restore();
+  }
+  return true;
+};
+
 /** 全部装饰器（按注册顺序） */
 export const GAME_DECORATORS: SpriteDecorator[] = [
   terrainDecorator,
@@ -264,6 +310,7 @@ export const GAME_DECORATORS: SpriteDecorator[] = [
   bulletDecorator,
   hitSparkDecorator,
   damageNumberDecorator,
+  pickupDecorator,
   portalDecorator,
   invincibleDecorator,
 ];

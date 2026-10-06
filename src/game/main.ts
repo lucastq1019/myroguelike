@@ -10,7 +10,8 @@ import { createMinimapSystem } from './systems/minimap';
 import { createHudSystem } from './systems/hud';
 import { createScreenSystem } from './systems/screen';
 import { GamePhase, GameStateMachine } from './state';
-import { loadSave, recordRun, SaveData } from './save';
+import { loadSave, recordRun, unlockItem, SaveData } from './save';
+import { getUnlockDef } from './resources/Unlocks';
 import { audio } from './audio';
 import { Game, GameState } from './game';
 import { GAME_DECORATORS } from './render/decorators';
@@ -27,6 +28,7 @@ const fsm = new GameStateMachine();
 let saveData: SaveData = loadSave();
 let isNewBest = false;
 let runRecorded = false;
+let soulsGained = 0;
 
 let currentState: GameState | null = null;
 
@@ -40,10 +42,13 @@ const game = new Game({
         const res = recordRun(s.floor, game.getBestCombo());
         saveData = res.save;
         isNewBest = res.isNewBest;
+        soulsGained = res.soulsGained;
         runRecorded = true;
       }
     }
   },
+  // 新一局应用局外解锁
+  getUnlocked: () => saveData.unlocked,
 });
 
 // ---- 渲染系统（装饰器集中在 render/decorators.ts） ----
@@ -78,6 +83,7 @@ engine.addSystem({
       combo: game.getBestCombo(),
       save: saveData,
       isNewBest,
+      soulsGained,
     });
   },
 });
@@ -94,6 +100,7 @@ engine.addSystem({
 function startRun(): void {
   runRecorded = false;
   isNewBest = false;
+  soulsGained = 0;
   game.start();
   fsm.set(GamePhase.PLAYING);
   audio.unlock();
@@ -113,6 +120,20 @@ if (canvas) {
         if (b.id === 'start' || b.id === 'restart') startRun();
         else if (b.id === 'resume') fsm.set(GamePhase.PLAYING);
         else if (b.id === 'menu') fsm.set(GamePhase.MENU);
+        else if (b.id === 'shop') fsm.set(GamePhase.SHOP);
+        else if (b.id === 'back') fsm.set(GamePhase.MENU);
+        else if (b.id.startsWith('unlock:')) {
+          // 购买解锁项
+          const uid = b.id.slice('unlock:'.length);
+          const def = getUnlockDef(uid);
+          if (def) {
+            const next = unlockItem(uid, def.cost);
+            if (next) {
+              saveData = next;
+              audio.play('unlock');
+            }
+          }
+        }
         return;
       }
     }
@@ -122,6 +143,15 @@ if (canvas) {
       for (const c of hudSystem.getUpgradeCardRects()) {
         if (mx >= c.x && mx <= c.x + c.w && my >= c.y && my <= c.y + c.h) {
           game.chooseUpgrade(c.index);
+          return;
+        }
+      }
+      // 升级面板按钮（刷新 / 跳过）
+      for (const b of hudSystem.getPanelButtons()) {
+        if (mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h) {
+          if (!b.enabled) return;
+          if (b.id === 'reroll') game.rerollUpgrade();
+          else if (b.id === 'skip') game.skipUpgrade();
           return;
         }
       }
@@ -155,5 +185,18 @@ window.addEventListener('keydown', (e) => {
   // 数字键：选升级
   if (fsm.is(GamePhase.PLAYING) && currentState?.upgradeChoosing && (k === '1' || k === '2' || k === '3')) {
     game.chooseUpgrade(parseInt(k, 10) - 1);
+    return;
+  }
+
+  // Q：刷新升级 / E：跳过升级
+  if (fsm.is(GamePhase.PLAYING) && currentState?.upgradeChoosing) {
+    if (k === 'q') {
+      game.rerollUpgrade();
+      return;
+    }
+    if (k === 'e') {
+      game.skipUpgrade();
+      return;
+    }
   }
 });

@@ -2,6 +2,7 @@
  * 游戏状态机
  *
  * MENU      —— 主菜单（开始界面）
+ * SHOP      —— 局外解锁商店
  * PLAYING   —— 游戏中
  * PAUSED    —— 暂停
  * GAMEOVER  —— 结束（死亡）
@@ -10,6 +11,7 @@
  */
 export enum GamePhase {
   MENU = 'menu',
+  SHOP = 'shop',
   PLAYING = 'playing',
   PAUSED = 'paused',
   GAMEOVER = 'gameover',

@@ -28,8 +28,19 @@ export interface CardRect {
   index: number;
 }
 
+/** 升级面板按钮命中区域 */
+export interface PanelButtonRect {
+  id: 'reroll' | 'skip';
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  /** 是否可点击（金币不足/次数用尽 → false） */
+  enabled: boolean;
+}
+
 /** 提示文字 */
-const TIP = 'A/D 移动 · K 跳跃(二段跳) · J 挥砍 · U 射击 · L 冲刺 · S+K 下穿 · 贴墙 K 蹬墙跳 · 1/2/3 选升级 · R 重开';
+const TIP = 'A/D 移动 · K 跳跃(二段跳) · J 挥砍 · U 射击 · L 冲刺 · S+K 下穿 · 贴墙 K 蹬墙跳 · 1/2/3 选升级 · Q 刷新 · E 跳过 · R 重开';
 
 // ============ 布局常量（画布内 HUD） ============
 /** 顶部 HUD 条高度 */
@@ -39,9 +50,10 @@ const HP_X = 14;
 const HP_Y = 10;
 const HP_W = 180;
 const HP_H = 14;
-/** 血条右侧信息（层数 / 剩余敌人）的间距 */
+/** 血条右侧信息（层数 / 剩余敌人 / 金币）的间距 */
 const INFO_GAP = 20;
 const INFO_ENEMY_DX = 110;
+const INFO_COIN_DX = 200;
 /** 右上角为小地图预留的宽度（连击/连招右对齐起点） */
 const RIGHT_RESERVE = 240;
 const RIGHT_STAGE_DX = 100;
@@ -52,12 +64,43 @@ const CARD_GAP = 24;
 /** 升级面板标题相对画布中心的纵向偏移 */
 const TITLE_DY = -110;
 const CARD_DY = -60;
+/** 升级面板底部按钮尺寸与间距 */
+const PANEL_BTN_W = 150;
+const PANEL_BTN_H = 40;
+const PANEL_BTN_GAP = 20;
+/** 按钮相对卡片底部的纵向偏移 */
+const PANEL_BTN_DY = 60;
+
+/** 升级面板按钮：可点击时高亮边框，禁用时置灰 */
+function drawPanelButton(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  label: string,
+  enabled: boolean,
+  accent: string,
+): void {
+  ctx.fillStyle = enabled ? '#1e1e1e' : '#161616';
+  ctx.fillRect(x, y, w, h);
+  ctx.strokeStyle = enabled ? accent : '#444';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(x, y, w, h);
+  ctx.fillStyle = enabled ? accent : '#666';
+  ctx.font = 'bold 14px ui-monospace, monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(label, x + w / 2, y + h / 2 + 1);
+}
 
 export function createHudSystem(
   canvasManager: { getCtx: () => CanvasRenderingContext2D | null; width: number; height: number },
 ) {
   /** 当前帧的升级卡片命中区域（供点击检测） */
   let cardRects: CardRect[] = [];
+  /** 当前帧的升级面板按钮命中区域（供点击检测） */
+  let panelButtons: PanelButtonRect[] = [];
 
   return {
     name: 'HudSystem',
@@ -65,6 +108,11 @@ export function createHudSystem(
     /** 暴露升级卡片命中区域（供鼠标点击检测） */
     getUpgradeCardRects(): CardRect[] {
       return cardRects;
+    },
+
+    /** 暴露升级面板按钮命中区域（刷新 / 跳过） */
+    getPanelButtons(): PanelButtonRect[] {
+      return panelButtons;
     },
 
     run(_world: unknown, _dt: number, state: GameState): void {
@@ -107,13 +155,29 @@ export function createHudSystem(
       ctx.textAlign = 'center';
       ctx.fillText(`${state.hp}/${state.maxHp}`, hpX + hpW / 2, hpY + hpH / 2 + 0.5);
 
-      // --- 层数 / 敌人 ---
+      // --- 层数 / 敌人 / 金币 ---
       ctx.textAlign = 'left';
       ctx.font = '13px ui-monospace, monospace';
       ctx.fillStyle = '#d4d4d4';
       const infoX = hpX + hpW + INFO_GAP;
       ctx.fillText(`第 ${state.floor} 层`, infoX, barH / 2);
       ctx.fillText(`剩余 ${state.enemiesLeft}`, infoX + INFO_ENEMY_DX, barH / 2);
+      ctx.fillStyle = '#ffd166';
+      ctx.fillText(`金币 ${state.coins}`, infoX + INFO_COIN_DX, barH / 2);
+
+      // --- 增益倒计时（血条下方） ---
+      if (state.buffs.length > 0) {
+        ctx.textAlign = 'left';
+        ctx.font = '11px ui-monospace, monospace';
+        let bx = HP_X;
+        const by = barH + 12;
+        for (const b of state.buffs) {
+          ctx.fillStyle = b.color;
+          const label = `${b.name} ${b.timer.toFixed(1)}s`;
+          ctx.fillText(label, bx, by);
+          bx += ctx.measureText(label).width + 14;
+        }
+      }
 
       // --- 连击 / 连招 ---
       ctx.textAlign = 'right';
@@ -152,6 +216,7 @@ export function createHudSystem(
 
       // ============ 升级选择面板 ============
       cardRects = [];
+      panelButtons = [];
       if (state.upgradeChoosing) {
         ctx.fillStyle = 'rgba(0,0,0,0.75)';
         ctx.fillRect(0, 0, W, H);
@@ -211,6 +276,30 @@ export function createHudSystem(
         ctx.fillStyle = '#666';
         ctx.font = '12px ui-monospace, monospace';
         ctx.fillText('点击卡片 或 按 1 / 2 / 3', W / 2, cardY + cardH + 30);
+
+        // ---- 刷新 / 跳过 按钮 ----
+        const btnY = cardY + cardH + PANEL_BTN_DY;
+        const btnW = PANEL_BTN_W;
+        const btnH = PANEL_BTN_H;
+        const gapB = PANEL_BTN_GAP;
+        const totalBW = btnW * 2 + gapB;
+        const bx0 = (W - totalBW) / 2;
+
+        // 刷新按钮
+        const rerollLabel =
+          state.rerollCost === 0 ? `刷新 (免费 ${state.freeRerolls})` : `刷新 (${state.rerollCost} 金币)`;
+        drawPanelButton(ctx, bx0, btnY, btnW, btnH, rerollLabel, state.canReroll, '#4ec9b0');
+        panelButtons.push({ id: 'reroll', x: bx0, y: btnY, w: btnW, h: btnH, enabled: state.canReroll });
+
+        // 跳过按钮
+        const skipLabel = `跳过 (+${state.skipHeal} HP)`;
+        drawPanelButton(ctx, bx0 + btnW + gapB, btnY, btnW, btnH, skipLabel, true, '#e5c07b');
+        panelButtons.push({ id: 'skip', x: bx0 + btnW + gapB, y: btnY, w: btnW, h: btnH, enabled: true });
+
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#666';
+        ctx.font = '12px ui-monospace, monospace';
+        ctx.fillText('按 Q 刷新 · 按 E 跳过', W / 2, btnY + btnH + 22);
       }
 
       ctx.restore();
