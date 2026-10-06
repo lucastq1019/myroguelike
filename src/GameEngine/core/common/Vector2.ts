@@ -51,8 +51,31 @@ export default class Vector2 {
         return new Vector2(this.x, this.y)
     }
 
-    set(position: Vector2) {
+    /**
+     * 设置向量的x和y值
+     * @param position 包含x和y属性的对象或Vector2实例
+     */
+    set(position: Vector2|{x: number, y: number}) {
         this.x = position.x
         this.y = position.y
+    }
+
+    /**
+     * 序列化向量
+     * @returns 包含x和y属性的普通对象
+     */
+    serialize(): {x: number, y: number} {
+        return {x: this.x, y: this.y};
+    }
+
+    /**
+     * 反序列化向量
+     * @param data 包含x和y属性的普通对象
+     */
+    deserialize(data: {x: number, y: number}): void {
+        if (data) {
+            this.x = data.x || 0;
+            this.y = data.y || 0;
+        }
     }
 }

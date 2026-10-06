@@ -1,164 +1,175 @@
-/game_project/
-|-- src/
-|   |-- assets/           # 存放游戏资源，如图片、音频等
-|   |   |-- images/
-|   |   |-- sounds/
-|   |
-|   |-- components/       # UI组件和游戏元素的代码
-|   |   |-- UI/
-|   |   |   |-- Button.ts # UI按钮组件
-|   |   |   |-- Panel.ts  # UI面板组件
-|   |   |   |-- ...
-|   |   |
-|   |   |-- GameElements/
-|   |   |   |-- Player.ts # 玩家角色代码
-|   |   |   |-- Enemy.ts  # 敌人角色代码
-|   |   |   |-- Platform.ts # 平台代码
-|   |   |   |-- ...
-|   |   |
-|   |   |-- index.ts      # 导入所有组件，便于统一管理
-|   |
-|   |-- scenes/           # 游戏场景代码
-|   |   |-- CharacterSelectionScene.ts # 角色选择场景
-|   |   |-- GameScene.ts  # 游戏主场景
-|   |   |-- MapScene.ts   # 地图场景
-|   |   |-- StartScene.ts # 开始场景
-|   |   |-- index.ts      # 导入所有场景，便于统一管理
-|   |
-|   |-- services/         # 游戏服务代码，如网络请求、数据存储等
-|   |   |-- AssetLoader.ts
-|   |   |-- DynamicComponentFactory.ts
-|   |   |-- LoadResource.ts
-|   |   |-- NetworkService.ts
-|   |   |-- StorageService.ts
-|   |   |-- ...
-|   |
-|   |-- GameEngine/       # 游戏引擎核心代码
-|   |   |-- GameEngine.ts # 游戏引擎核心类
-|   |   |-- SceneManager.ts # 场景管理器
-|   |   |-- UIManager.ts  # UI管理器
-|   |   |-- ...
-|   |   |
-|   |   |-- battle/
-|   |   |   |-- BattleEngine.ts
-|   |   |   |-- Types.ts
-|   |   |   |-- Worker.ts
-|   |   |
-|   |   |-- camera/
-|   |   |   |-- Camera2D.ts
-|   |   |
-|   |   |-- core/
-|   |   |   |-- common/
-|   |   |   |   |-- Vector2.ts
-|   |   |   |
-|   |   |   |-- objects/
-|   |   |   |   |-- AnimationComponent.ts
-|   |   |   |   |-- AudioComponent.ts
-|   |   |   |   |-- AudioComponentConfig.ts
-|   |   |   |   |-- AudioSource.ts
-|   |   |   |   |-- Clickable.ts
-|   |   |   |   |-- Collider.ts
-|   |   |   |   |-- ColliderComponent.ts
-|   |   |   |   |-- ColliderComponentConfig.ts
-|   |   |   |   |-- Component.ts
-|   |   |   |   |-- ComponentConfig.ts
-|   |   |   |   |-- GameObject.ts
-|   |   |   |   |-- GameObjectConfig.ts
-|   |   |   |   |-- ImageRenderConfig.ts
-|   |   |   |   |-- MapNode.ts
-|   |   |   |   |-- NodeGraphRenderComponent.ts
-|   |   |   |   |-- RenderComponent.ts
-|   |   |   |   |-- SpriteComponent.ts
-|   |   |   |   |-- SpriteComponentConfig.ts
-|   |   |   |   |-- TextRenderConfig.ts
-|   |   |   |   |-- Transform.ts
-|   |   |   |
-|   |   |   |-- tools/
-|   |   |   |   |-- ComponentFactory.ts
-|   |   |
-|   |   |-- dataManager/
-|   |   |   |-- DataManager.ts
-|   |   |
-|   |   |-- engines/
-|   |   |   |-- AIEngine.ts
-|   |   |   |-- AnimationEngine.ts
-|   |   |   |-- AudioEngine.ts
-|   |   |   |-- NetworkingEngine.ts
-|   |   |   |-- ScriptingEngine.ts
-|   |   |
-|   |   |-- events/
-|   |   |   |-- EventDispatcher.ts
-|   |   |   |-- EventListener.ts
-|   |   |   |-- InputHandler.ts
-|   |   |
-|   |   |-- physicsEngine/
-|   |   |   |-- index.js
-|   |   |   |
-|   |   |   |-- box2d/
-|   |   |   |   |-- CollisionDetector.js
-|   |   |   |   |-- Obj2d.js
-|   |   |   |   |-- ResolveElastic.js
-|   |   |   |   |-- World2d.js
-|   |   |   |
-|   |   |   |-- common/
-|   |   |   |   |-- Vec2.js
-|   |   |
-|   |   |-- renderer/
-|   |   |   |-- ButtonRenderComponent.ts
-|   |   |   |-- CanvasManager.ts
-|   |   |   |-- ImageRenderComponent.ts
-|   |   |   |-- ImageRenderer.js
-|   |   |   |-- RectangleRenderer.js
-|   |   |   |-- RenderingEngine.ts
-|   |   |   |-- TextRenderComponent.ts
-|   |   |   |-- TextRenderer.ts
-|   |
-|   |-- utils/            # 工具函数和常量
-|   |   |-- CommonUtils.ts  # 数学工具函数
-|   |   |-- Constants.ts  # 常量定义
-|   |   |-- FreeList.ts  # 内存池实现
-|   |   |-- InputHandler.ts  # 输入处理
-|   |   |-- KeyConstants.ts  # 键盘常量定义
-|   |
-|   |-- index.ts          # 应用入口文件
-|
-|-- public/
-|   |-- index.html        # HTML入口文件
-|   |-- favicon.ico       # 网页图标
-|   |-- main.css          # 样式文件
-|   |-- config.json       # 配置文件
-|   |-- MainMenuUiConfig.json # 主菜单UI配置
-|   |-- scenes.json       # 场景配置
-|
-|-- .gitignore            # Git忽略文件配置
-|-- package.json          # Node.js项目配置
-|-- tsconfig.json         # TypeScript编译配置
-|-- webpack.config.js     # Webpack打包配置
-|-- README.md             # 项目说明文档
+# mygame —— ECS 引擎 + 动作 Roguelike
 
+> 目标：**学习 ECS 原理** → 做出**动作类 Roguelike 可玩 Demo**（类《死亡细胞》）
+> 语言：TypeScript　｜　构建：Vite
+> **一套代码、一个入口、一套设计**
 
-编写游戏内容： 根据GameEngine提供的接口，编写游戏的具体内容。这可能包括但不限于：
+---
 
-渲染： 使用GameEngine的renderingEngine绘制游戏元素，如精灵、背景、文字等。可能需要定义一些渲染组件或函数，封装对renderingEngine的调用。
+## 项目结构
 
-物理： 使用GameEngine的physicsEngine实现游戏对象的碰撞检测、运动模拟等物理行为。创建对应的物理对象并设置其属性。
+```
+canvas-game/
+├── src/
+│   ├── GameEngine/          # ⭐ 唯一引擎
+│   │   ├── ecs/             #   ECS 内核
+│   │   │   ├── World.ts     #     世界（实体+组件+系统+资源）
+│   │   │   ├── Entity.ts / EntityManager.ts / ComponentStorage.ts
+│   │   │   ├── Query.ts / System.ts / SystemManager.ts
+│   │   │   └── components/  #     通用组件（Position/Velocity/Sprite）
+│   │   ├── resources/       #   全局资源
+│   │   │   ├── Camera.ts    #     相机（世界↔屏幕坐标、跟随、剔除）
+│   │   │   ├── Input.ts     #     输入（键鼠）
+│   │   │   └── Time.ts      #     时间
+│   │   ├── renderer/        #   渲染（CanvasManager、ECS 式 RenderSystem）
+│   │   ├── events/          #   事件分发
+│   │   ├── core/            #   配置/类型/错误
+│   │   ├── GameEngine.ts    #   引擎主类（单例、循环、资源注册）
+│   │   └── verify-engine.ts #   引擎验证
+│   │
+│   └── game/                # ⭐ 动作 Roguelike 内容
+│       ├── components/      #   游戏组件（Health/Collider/Weapon...）
+│       ├── systems/         #   游戏系统（Movement/EnemyAI/Collision...）
+│       ├── resources/       #   升级词条
+│       ├── game.ts          #   游戏装配（房间/升级/波次）
+│       ├── main.ts          #   入口（用 GameEngine 启动）
+│       └── verify-game.ts   #   游戏验证
+│
+├── index.html               # 唯一入口
+├── vite.config.mts
+├── tsconfig.json
+└── docs/PLAN.md
+```
 
-音频： 使用GameEngine的audioEngine播放背景音乐、音效等。加载音频资源并适时触发播放。
+## 快速开始
 
-脚本： 使用GameEngine的scriptingEngine编写游戏逻辑脚本。可能需要设计一套脚本语言或API，方便游戏设计师编写游戏规则和交互逻辑。
+```bash
+cd canvas-game
+npm install
+npm run dev     # http://localhost:5173
+```
 
-动画： 使用GameEngine的animationEngine实现角色动画、特效动画等。创建动画序列并关联到游戏对象。
+## 玩法
 
-网络： 使用GameEngine的networkingEngine处理多人在线交互、数据同步等。可能需要实现客户端-服务器通信协议和数据包解析。
+| 操作 | 键 |
+|---|---|
+| 移动 | WASD / 方向键 |
+| 瞄准 | 鼠标 |
+| 射击 | 按住鼠标左键 |
+| 选升级 | 点击卡片 或 1 / 2 / 3 |
+| 重开 | R |
 
-AI： 使用GameEngine的aiEngine实现游戏内NPC的行为决策、寻路算法等。编写AI逻辑并绑定到对应的NPC对象。
+清空房间敌人 → 中央出现传送门 → 走进去 → 升级 3 选 1 → 下一层。
 
-数据管理： 使用GameEngine的dataManager存储和读取游戏数据（如玩家进度、物品列表等）。设计数据模型和存取接口。
+---
 
-事件处理： 使用GameEngine的eventDispatcher处理游戏内的各种事件（如点击、按键、游戏状态变化等）。订阅和发布事件，实现事件驱动的程序结构。
+## 架构设计
 
-场景管理： 使用GameEngine的sceneManager加载、切换和管理游戏场景。定义场景类或对象，封装场景相关的逻辑和资源加载。
+### 三层职责
 
-相机控制： 使用GameEngine的camera实现游戏视口的移动、缩放等操作。编写相机控制器，响应用户输入或游戏逻辑的变化。
+```
+ECS 数据层（数据驱动）        Resource 层（全局单例）      框架层（生命周期）
+├── Entity（实体）             ├── Camera（相机）           ├── GameEngine
+├── Component（纯数据）        ├── Input（输入）            ├── CanvasManager
+├── System（行为）             └── Time（时间）             ├── EventDispatcher
+└── World（容器）                                          └── ConfigManager
+```
 
-集成到主项目： 将编写的GameContent.ts以及其他必要的游戏内容代码（如资源、组件、场景等）集成到项目中。确保GameEngine的实例能在适当的时候被创建和启动。可能需要调整项目主文件（如index.ts或main.ts）的结构，以适应游戏内容的加载和运行。
+### 为什么不是「全部 ECS 化」
+
+ECS 适合**「大量同类实体 + 每帧批量处理」**。以下**不该** ECS 化：
+
+| 部分 | 归属 | 理由 |
+|---|---|---|
+| 游戏实体/组件/系统 | ✅ ECS | 大量同类 + 每帧更新 |
+| 相机/输入/时间 | 📦 Resource | 全局单例，不参与组件查询 |
+| GameEngine / CanvasManager | 🔧 框架 | 生命周期管理，单例 |
+| EventDispatcher | 🔧 服务 | 事件总线天然单例 |
+| UI（Panel/Button/Text） | 🔧 OOP | 数量少、事件驱动、层级结构 |
+
+### Resource 用法
+
+```typescript
+// 注册（GameEngine 构造时）
+world.insertResource(Camera, new Camera(960, 600, 1920, 1200));
+world.insertResource(Input, new Input());
+world.insertResource(Time, new Time());
+
+// 系统里读取
+run(world, dt) {
+  const camera = world.getResource(Camera)!;
+  const input = world.getResource(Input)!;
+}
+```
+
+### ECS 用法
+
+```typescript
+const world = new World();
+const e = world.spawn();
+world.addComponent(e, Position, new Position(0, 0));
+world.addComponent(e, Velocity, new Velocity(1, 0));
+
+world.addSystem({
+  name: 'MovementSystem',
+  run(w, dt) {
+    const positions = w.dense(Position);       // 稠密数组（缓存友好）
+    const entities = w.denseEntities(Position);
+    for (let i = 0; i < positions.length; i++) {
+      const vel = w.storage.get(entities[i], Velocity);
+      if (vel) { positions[i].x += vel.x * dt; positions[i].y += vel.y * dt; }
+    }
+  },
+});
+
+world.update(1 / 60);
+```
+
+---
+
+## 改造历程
+
+原项目是自研 Canvas 引擎，但**是半成品**（147 个 TS 错误，ECS 是「披着 ECS 皮的 OOP」）。
+
+| 阶段 | 内容 |
+|---|---|
+| 一 | 手写 ECS 内核（SoA / 位掩码 / 版本号 / FreeList） |
+| 二 | 极简动作 Roguelike（移动/射击/敌人/波次） |
+| 三 | 地图卷轴 + 房间推进 + 多敌人 AI + 升级 3 选 1 + 手感 |
+| 路线 2 | 用新 ECS 内核替换旧 `ecs/`，保留外壳，**TS 错误 147 → 0** |
+| 路线 Y | GameEngine 引入 Resource、删 GameObject、相机改 Resource、RenderSystem 改 ECS 式、roguelike 并入 `game/` |
+
+### 改造前后对比
+
+| 维度 | 改造前 | 改造后 |
+|---|---|---|
+| 组件存储 | Entity 内部 Map（AoS） | ComponentStorage（SoA 稠密数组） |
+| 组件行为 | 带 `update(dt)` | 纯数据 |
+| 查询 | 全表扫描 | 位掩码筛选 |
+| 实体 id | 只增不复用 | FreeList 复用 + 版本号 |
+| 相机 | `EcsComponent` 子类 | Resource |
+| 输入 | `InputHandler` 类 | Resource |
+| 全局数据 | 散落各处 | Resource（统一） |
+| OOP 实体 | `GameObject` 体系 | 删除，统一用 ECS |
+| 渲染 | `RenderComponent`（OOP） | `Sprite` 组件 + RenderSystem |
+| 代码组织 | 引擎 + roguelike 两套 | 引擎 + game 一套 |
+| **TS 错误** | **147** | **0** |
+
+---
+
+## 验证
+
+```bash
+npx tsx src/GameEngine/verify-engine.ts   # 引擎验证（13 项）
+npx tsx src/game/verify-game.ts           # 游戏验证（13 项）
+bash scripts/tsc-report.sh                # TS 错误统计
+```
+
+### 验证结果
+
+| 验证 | 结果 |
+|---|---|
+| 全项目 TS 错误 | ✅ 0 |
+| 引擎验证（ECS/World/Resource/系统） | ✅ 13/13 |
+| 游戏验证（引擎启动/房间/渲染/升级） | ✅ 13/13 |
+| Vite 编译 + 页面加载 | ✅ 200 |

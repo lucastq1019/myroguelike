@@ -1,102 +1,135 @@
+/**
+ * RenderSystem —— 渲染系统（ECS 式）
+ *
+ * 查 Position + Sprite 组件，经相机变换后绘制到 Canvas。
+ * - 相机从 Resource 读取
+ * - 视口剔除（只画可见实体）
+ * - 支持自定义绘制钩子（如传送门脉冲、无敌闪烁）
+ */
+import type { World } from '../ecs/World';
+import { Position } from '../ecs/components/Position';
+import { Sprite } from '../ecs/components/Sprite';
+import { Camera } from '../resources/Camera';
 import CanvasManager from './CanvasManager';
-import RenderComponent from '../core/objects/RenderComponent';
-import EntityManager from '../ecs/EntityManager';
-import System from '../ecs/System';
-import GameEngine from '../GameEngine';
-import Camera2D from '../core/objects/Camera2D';
 
-class RenderSystem extends System {
-    private canvasManager: CanvasManager;
-    private screenWidth: number;
-    private screenHeight: number;
+/** 自定义绘制钩子：返回 true 表示已处理，跳过默认绘制 */
+export type SpriteDecorator = (
+  ctx: CanvasRenderingContext2D,
+  screen: { x: number; y: number },
+  sprite: Sprite,
+  entityIndex: number,
+  world: World,
+  time: number,
+) => boolean;
 
-    constructor(entityManager: EntityManager) {
-        super(entityManager);
-        this.canvasManager = new CanvasManager();
-        this.screenWidth = GameEngine.getScreenWidth();
-        this.screenHeight = GameEngine.getScreenHeight();
-    }
-
-    update(dt: number): void {
-        this.render();
-    }
-
-    private render(): void {
-        this.canvasManager.clear();
-        
-        const activeCamera = GameEngine.getInstance().getActiveCamera();
-        if (!activeCamera) {
-            console.warn('No active camera found, rendering skipped.');
-            return;
-        }
-
-        // 应用相机变换
-        this.applyCameraTransform(activeCamera);
-
-        // 渲染所有实体
-        this.renderEntities();
-
-        // 调试渲染
-        if (GameEngine.getInstance().isDebugMode()) {
-            this.debugRender(activeCamera);
-        }
-    }
-
-    private applyCameraTransform(camera: Camera2D): void {
-        const ctx = this.canvasManager.getCtx();
-        if (!ctx) return;
-
-        ctx.setTransform(
-            camera.scale, 0, 0, camera.scale,
-            -camera.position.x * camera.scale + this.screenWidth / 2,
-            -camera.position.y * camera.scale + this.screenHeight / 2
-        );
-    }
-
-    private renderEntities(): void {
-        const entities = this.entityManager.getAllEntities();
-        entities.forEach(entity => {
-            const renderComponent = entity.getComponent<RenderComponent>('RenderComponent');
-            if (renderComponent) {
-                renderComponent.render(this.canvasManager);
-            }
-        });
-    }
-
-    private debugRender(camera: Camera2D): void {
-        const ctx = this.canvasManager.getCtx();
-        if (!ctx) return;
-
-        // 保存当前状态
-        ctx.save();
-        
-        // 重置变换
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
-        
-        // 绘制相机边界
-        this.drawCameraBounds(camera);
-        
-        // 恢复状态
-        ctx.restore();
-    }
-
-    private drawCameraBounds(camera: Camera2D): void {
-        const ctx = this.canvasManager.getCtx();
-        if (!ctx) return;
-
-        const screenPos = {
-            x: this.screenWidth / 2 - camera.size.x * camera.scale / 2,
-            y: this.screenHeight / 2 - camera.size.y * camera.scale / 2
-        };
-
-        ctx.strokeStyle = 'red';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(
-            screenPos.x, screenPos.y,
-            camera.size.x * camera.scale,
-            camera.size.y * camera.scale
-        );
-    }
+export interface RenderSystemOptions {
+  /** 背景色 */
+  background?: string;
+  /** 是否绘制网格 */
+  grid?: boolean;
+  /** 网格间距 */
+  gridSize?: number;
+  /** 自定义绘制钩子（按顺序尝试） */
+  decorators?: SpriteDecorator[];
 }
 
-export default RenderSystem;
+export function createRenderSystem(
+  canvasManager: CanvasManager,
+  options: RenderSystemOptions = {},
+) {
+  const {
+    background = '#181818',
+    grid = true,
+    gridSize = 64,
+    decorators = [],
+  } = options;
+
+  let time = 0;
+
+  return {
+    name: 'RenderSystem',
+    run(world: World, dt: number): void {
+      time += dt;
+      const ctx = canvasManager.getCtx();
+      if (!ctx) return;
+
+      const camera = world.getResource(Camera);
+      if (!camera) return;
+
+      const w = canvasManager.width;
+      const h = canvasManager.height;
+
+      // 背景
+      ctx.fillStyle = background;
+      ctx.fillRect(0, 0, w, h);
+
+      // 网格（随相机移动）
+      if (grid) drawGrid(ctx, camera, w, h, gridSize);
+
+      // 绘制实体
+      const sprites = world.dense(Sprite);
+      const entities = world.denseEntities(Sprite);
+      for (let i = 0; i < sprites.length; i++) {
+        const idx = entities[i];
+        const pos = world.storage.get(idx, Position);
+        if (!pos) continue;
+        if (!camera.isVisible(pos.x, pos.y, 80)) continue;
+
+        const screen = camera.worldToScreen(pos.x, pos.y);
+        const sprite = sprites[i];
+
+        // 尝试自定义绘制钩子
+        let handled = false;
+        for (const dec of decorators) {
+          if (dec(ctx, screen, sprite, idx, world, time)) {
+            handled = true;
+            break;
+          }
+        }
+        if (handled) continue;
+
+        // 默认绘制
+        ctx.globalAlpha = 1;
+        if (sprite.shape === 'circle') {
+          ctx.fillStyle = sprite.color;
+          ctx.beginPath();
+          ctx.arc(screen.x, screen.y, sprite.size / 2, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          ctx.fillStyle = sprite.color;
+          ctx.fillRect(screen.x - sprite.size / 2, screen.y - sprite.size / 2, sprite.size, sprite.size);
+        }
+      }
+      ctx.globalAlpha = 1;
+    },
+  };
+}
+
+function drawGrid(
+  ctx: CanvasRenderingContext2D,
+  camera: Camera,
+  w: number,
+  h: number,
+  gridSize: number,
+): void {
+  const startX = Math.floor((camera.x - w / 2) / gridSize) * gridSize;
+  const startY = Math.floor((camera.y - h / 2) / gridSize) * gridSize;
+  ctx.strokeStyle = '#242424';
+  ctx.lineWidth = 1;
+  for (let x = startX; x < camera.x + w / 2 + gridSize; x += gridSize) {
+    const sx = camera.worldToScreen(x, 0).x;
+    ctx.beginPath();
+    ctx.moveTo(sx, 0);
+    ctx.lineTo(sx, h);
+    ctx.stroke();
+  }
+  for (let y = startY; y < camera.y + h / 2 + gridSize; y += gridSize) {
+    const sy = camera.worldToScreen(0, y).y;
+    ctx.beginPath();
+    ctx.moveTo(0, sy);
+    ctx.lineTo(w, sy);
+    ctx.stroke();
+  }
+}
+
+export default createRenderSystem;

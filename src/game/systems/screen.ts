@@ -1,0 +1,169 @@
+/**
+ * 界面系统（画布内绘制）
+ *
+ * 绘制主菜单 / 暂停菜单 / 结束界面，并暴露按钮命中区域供鼠标点击。
+ * 必须在 RenderSystem 之后运行。
+ *
+ * 设计：
+ *   - 纯文字（不用 emoji，避免等宽字体 fallback 渲染异常）
+ *   - 内容块整体垂直居中：先算总高度，再从 (H - totalH) / 2 开始布局
+ */
+import { GamePhase } from '../state';
+import { SaveData } from '../save';
+
+export interface ScreenButton {
+  id: string;
+  label: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+export interface ScreenContext {
+  phase: GamePhase;
+  /** 本局层数（结束界面用） */
+  floor: number;
+  /** 本局最高连击 */
+  combo: number;
+  /** 存档数据（最佳记录） */
+  save: SaveData;
+  /** 是否新纪录 */
+  isNewBest: boolean;
+}
+
+/** 布局元素（用于计算总高度并居中） */
+type Row =
+  | { kind: 'title'; text: string; size: number; color: string; gap?: number }
+  | { kind: 'text'; text: string; size: number; color: string; gap?: number }
+  | { kind: 'button'; id: string; label: string; w: number; h: number; gap?: number };
+
+/** 默认行间距 */
+const DEFAULT_GAP = 16;
+
+export function createScreenSystem(
+  canvasManager: { getCtx: () => CanvasRenderingContext2D | null; width: number; height: number },
+) {
+  let buttons: ScreenButton[] = [];
+  /** 当前帧内容块的实际范围（用于测试/调试居中） */
+  let blockTop = 0;
+  let blockBottom = 0;
+
+  /** 计算一行占用的高度（含其后的 gap） */
+  function rowHeight(row: Row): number {
+    const gap = row.gap ?? DEFAULT_GAP;
+    if (row.kind === 'button') return row.h + gap;
+    return row.size + gap;
+  }
+
+  /** 绘制一行，返回该行绘制后的 y（下一行的起始 y） */
+  function drawRow(ctx: CanvasRenderingContext2D, row: Row, cx: number, y: number): number {
+    const gap = row.gap ?? DEFAULT_GAP;
+    if (row.kind === 'button') {
+      const x = cx - row.w / 2;
+      ctx.fillStyle = '#1e1e1e';
+      ctx.fillRect(x, y, row.w, row.h);
+      ctx.strokeStyle = '#4ec9b0';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x, y, row.w, row.h);
+      ctx.fillStyle = '#d4d4d4';
+      ctx.font = 'bold 16px ui-monospace, monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(row.label, cx, y + row.h / 2 + 1);
+      buttons.push({ id: row.id, label: row.label, x, y, w: row.w, h: row.h });
+      return y + row.h + gap;
+    }
+    // 文字：y 为该行顶部，绘制基线在 y + size/2
+    ctx.fillStyle = row.color;
+    ctx.font = `${row.kind === 'title' ? 'bold ' : ''}${row.size}px ui-monospace, monospace`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(row.text, cx, y + row.size / 2);
+    return y + row.size + gap;
+  }
+
+  /** 绘制整块内容（垂直居中） */
+  function drawBlock(ctx: CanvasRenderingContext2D, W: number, H: number, rows: Row[]): void {
+    const totalH = rows.reduce((acc, r) => acc + rowHeight(r), 0);
+    let y = (H - totalH) / 2;
+    blockTop = y;
+    for (const row of rows) {
+      y = drawRow(ctx, row, W / 2, y);
+    }
+    blockBottom = y;
+  }
+
+  return {
+    name: 'ScreenSystem',
+
+    /** 暴露按钮命中区域（供鼠标点击） */
+    getButtons(): ScreenButton[] {
+      return buttons;
+    },
+
+    /** 暴露内容块范围（调试/测试居中用） */
+    getBlockBounds(): { top: number; bottom: number } {
+      return { top: blockTop, bottom: blockBottom };
+    },
+
+    run(_world: unknown, _dt: number, sc: ScreenContext): void {
+      const ctx = canvasManager.getCtx();
+      if (!ctx) return;
+      const W = canvasManager.width;
+      const H = canvasManager.height;
+      buttons = [];
+
+      if (sc.phase === GamePhase.PLAYING) return; // 游戏中不画界面
+
+      ctx.save();
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+
+      // 半透明遮罩
+      ctx.fillStyle = 'rgba(8, 12, 18, 0.85)';
+      ctx.fillRect(0, 0, W, H);
+
+      if (sc.phase === GamePhase.MENU) {
+        drawBlock(ctx, W, H, [
+          { kind: 'title', text: '动作 Roguelike', size: 42, color: '#4ec9b0', gap: 12 },
+          { kind: 'text', text: '横版动作 · 连招 · 冲刺 · 蹬墙跳', size: 14, color: '#888', gap: 36 },
+          { kind: 'button', id: 'start', label: '开始游戏', w: 220, h: 52, gap: 36 },
+          {
+            kind: 'text',
+            text: `最高层数 ${sc.save.bestFloor}　最高连击 ${sc.save.bestCombo}　游玩次数 ${sc.save.runs}`,
+            size: 13,
+            color: '#666',
+            gap: 12,
+          },
+          { kind: 'text', text: '点击「开始游戏」或按 Enter', size: 12, color: '#555', gap: 0 },
+        ]);
+      } else if (sc.phase === GamePhase.PAUSED) {
+        drawBlock(ctx, W, H, [
+          { kind: 'title', text: '已暂停', size: 34, color: '#d4d4d4', gap: 32 },
+          { kind: 'button', id: 'resume', label: '继续游戏', w: 220, h: 48, gap: 12 },
+          { kind: 'button', id: 'restart', label: '重新开始', w: 220, h: 48, gap: 12 },
+          { kind: 'button', id: 'menu', label: '返回主菜单', w: 220, h: 48, gap: 24 },
+          { kind: 'text', text: '按 ESC 继续', size: 12, color: '#555', gap: 0 },
+        ]);
+      } else if (sc.phase === GamePhase.GAMEOVER) {
+        const rows: Row[] = [
+          { kind: 'title', text: '你死了', size: 40, color: '#e06c75', gap: 20 },
+          { kind: 'text', text: `到达第 ${sc.floor} 层`, size: 18, color: '#d4d4d4', gap: 10 },
+          { kind: 'text', text: `本局最高连击 x${sc.combo}`, size: 14, color: '#ffd166', gap: 10 },
+        ];
+        if (sc.isNewBest) {
+          rows.push({ kind: 'text', text: '新纪录！', size: 16, color: '#4ec9b0', gap: 24 });
+        } else {
+          rows.push({ kind: 'text', text: `历史最高 第 ${sc.save.bestFloor} 层`, size: 13, color: '#666', gap: 24 });
+        }
+        rows.push({ kind: 'button', id: 'restart', label: '再来一局', w: 220, h: 48, gap: 12 });
+        rows.push({ kind: 'button', id: 'menu', label: '返回主菜单', w: 220, h: 48, gap: 20 });
+        rows.push({ kind: 'text', text: '按 R 快速重开', size: 12, color: '#555', gap: 0 });
+        drawBlock(ctx, W, H, rows);
+      }
+
+      ctx.restore();
+    },
+  };
+}
