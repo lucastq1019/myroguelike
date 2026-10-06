@@ -9,6 +9,7 @@
 import type { World } from '../ecs/World';
 import { Position } from '../ecs/components/Position';
 import { Sprite } from '../ecs/components/Sprite';
+import { Transform } from '../ecs/components/Transform';
 import { Camera } from '../resources/Camera';
 import CanvasManager from './CanvasManager';
 
@@ -88,17 +89,29 @@ export function createRenderSystem(
         }
         if (handled) continue;
 
-        // 默认绘制
+        // 默认绘制（应用 Transform 的旋转/缩放，无 Transform 或单位变换时零开销）
         ctx.globalAlpha = 1;
+        const tf = world.storage.get(idx, Transform);
+        const needsTransform = tf !== undefined && !tf.isIdentity();
+        if (needsTransform) {
+          ctx.save();
+          ctx.translate(screen.x, screen.y);
+          ctx.rotate(tf.rotation);
+          ctx.scale(tf.scaleX, tf.scaleY);
+        }
+        const drawX = needsTransform ? 0 : screen.x;
+        const drawY = needsTransform ? 0 : screen.y;
+
         if (sprite.shape === 'circle') {
           ctx.fillStyle = sprite.color;
           ctx.beginPath();
-          ctx.arc(screen.x, screen.y, sprite.size / 2, 0, Math.PI * 2);
+          ctx.arc(drawX, drawY, sprite.size / 2, 0, Math.PI * 2);
           ctx.fill();
         } else {
           ctx.fillStyle = sprite.color;
-          ctx.fillRect(screen.x - sprite.size / 2, screen.y - sprite.size / 2, sprite.size, sprite.size);
+          ctx.fillRect(drawX - sprite.size / 2, drawY - sprite.size / 2, sprite.size, sprite.size);
         }
+        if (needsTransform) ctx.restore();
       }
       ctx.globalAlpha = 1;
     },

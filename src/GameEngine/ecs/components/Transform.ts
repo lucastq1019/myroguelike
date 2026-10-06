@@ -1,84 +1,81 @@
-import EcsComponent from '../EcsComponent';
-import Vector2 from '../../core/common/Vector2';
-
 /**
- * 变换组件
- * 负责实体的位置、旋转和缩放
+ * Transform —— 变换组件（纯数据）
+ *
+ * 在 Position 之外补充 **旋转** 与 **缩放**：
+ *   - Position：位置（高频更新，渲染/物理热路径，保持独立便于 SoA 遍历）
+ *   - Transform：rotation（弧度）+ scale（x/y 缩放）
+ *
+ * 设计说明：
+ * - 与 Position 分离，是为了不破坏现有 `dense(Position)` 热路径的缓存友好性。
+ * - 实体若同时有 Position + Transform，渲染时施加旋转/缩放；无 Transform 则按原样绘制。
+ * - `serialize()/deserialize()` 用于「中途存档」（行动项 H）。
+ *
+ * 注意：组件是**纯数据**，行为在 System 中。
  */
-class Transform extends EcsComponent {
-    position: Vector2;
-    rotation: number;
-    scale: Vector2;
 
-    constructor() {
-        super();
-        this.position = new Vector2(0, 0);
-        this.rotation = 0;
-        this.scale = new Vector2(1, 1);
-    }
+export interface TransformData {
+  rotation: number;
+  scaleX: number;
+  scaleY: number;
+}
 
-    /**
-     * 更新变换组件
-     * @param dt 时间步长
-     */
-    update(dt: number): void {
-        // Transform组件通常不需要复杂的更新逻辑
-        // 主要是提供数据给其他系统使用
-    }
+export class Transform {
+  constructor(
+    /** 旋转弧度（顺时针为正，与 Canvas rotate 一致） */
+    public rotation: number = 0,
+    /** 水平缩放（1 = 原始大小） */
+    public scaleX: number = 1,
+    /** 垂直缩放（1 = 原始大小） */
+    public scaleY: number = 1,
+  ) {}
 
-    /**
-     * 设置位置
-     * @param x 横坐标
-     * @param y 纵坐标
-     */
-    setPosition(x: number, y: number): void {
-        this.position.set({x, y});
-    }
+  /** 设置旋转角度（弧度） */
+  setRotation(rad: number): this {
+    this.rotation = rad;
+    return this;
+  }
 
-    /**
-     * 设置旋转角度
-     * @param angle 角度（弧度）
-     */
-    setRotation(angle: number): void {
-        this.rotation = angle;
-    }
+  /** 设置统一缩放 */
+  setScale(s: number): this;
+  setScale(x: number, y: number): this;
+  setScale(x: number, y?: number): this {
+    this.scaleX = x;
+    this.scaleY = y ?? x;
+    return this;
+  }
 
-    /**
-     * 设置缩放
-     * @param x 水平缩放
-     * @param y 垂直缩放
-     */
-    setScale(x: number, y: number): void {
-        this.scale.set({x, y});
-    }
+  /** 是否为单位变换（无旋转无缩放）—— 渲染时可跳过 ctx.save/rotate/scale */
+  isIdentity(): boolean {
+    return this.rotation === 0 && this.scaleX === 1 && this.scaleY === 1;
+  }
 
-    /**
-     * 序列化组件数据
-     * @returns 序列化后的数据
-     */
-    serialize(): {position: {x: number, y: number}, rotation: number, scale: {x: number, y: number}} {
-        return {
-            position: this.position.serialize(),
-            rotation: this.rotation,
-            scale: this.scale.serialize()
-        };
-    }
+  /** 旋转角转成角度制（调试用） */
+  get degrees(): number {
+    return (this.rotation * 180) / Math.PI;
+  }
 
-    /**
-     * 反序列化组件数据
-     * @param data 序列化的数据
-     */
-    deserialize(data: any): void {
-        if (data.position) {
-            this.position.deserialize(data.position);
-        }
-        if (data.rotation !== undefined) {
-            this.rotation = data.rotation;
-        }
-        if (data.scale) {
-            this.scale.deserialize(data.scale);
-        }
-    }
+  /** 序列化（存档用） */
+  serialize(): TransformData {
+    return { rotation: this.rotation, scaleX: this.scaleX, scaleY: this.scaleY };
+  }
+
+  /** 反序列化（读档用） */
+  deserialize(data: Partial<TransformData>): this {
+    if (data.rotation !== undefined) this.rotation = data.rotation;
+    if (data.scaleX !== undefined) this.scaleX = data.scaleX;
+    if (data.scaleY !== undefined) this.scaleY = data.scaleY;
+    return this;
+  }
+
+  /** 从普通对象克隆 */
+  clone(): Transform {
+    return new Transform(this.rotation, this.scaleX, this.scaleY);
+  }
+
+  /** 从任意（可能为空的）数据构造，用于读档容错 */
+  static from(data?: Partial<TransformData> | null): Transform {
+    return new Transform().deserialize(data ?? {});
+  }
 }
 
 export default Transform;

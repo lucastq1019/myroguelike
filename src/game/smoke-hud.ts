@@ -28,6 +28,14 @@ const normalState: GameState = {
   upgradeOptions: [],
   combo: 5,
   comboStage: 2,
+  coins: 12,
+  buffs: [{ id: 'rage', name: '狂暴', color: '#ff8c42', timer: 5.2 }],
+  freeRerolls: 1,
+  rerollCost: 0,
+  canReroll: true,
+  skipHeal: 25,
+  nodeKind: 'battle',
+  isBoss: false,
 };
 calls.length = 0;
 hud.run(null, 1 / 60, normalState);
@@ -52,6 +60,14 @@ const upgradeState: GameState = {
   ],
   combo: 0,
   comboStage: 0,
+  coins: 0,
+  buffs: [],
+  freeRerolls: 1,
+  rerollCost: 0,
+  canReroll: true,
+  skipHeal: 25,
+  nodeKind: 'battle',
+  isBoss: false,
 };
 calls.length = 0;
 hud.run(null, 1 / 60, upgradeState);

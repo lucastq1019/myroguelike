@@ -34,7 +34,6 @@
     "node_modules",
     "**/*.spec.ts",
     "**/__tests__/*",
-    "src/nouse/**",
     "src/scenes/**",
     "src/GameEngine/engines/**",
     "src/GameEngine/battle/**",

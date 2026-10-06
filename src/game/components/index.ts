@@ -381,3 +381,42 @@ export class Lifesteal {
 export class CritChance {
   constructor(public chance: number = 0) {}
 }
+
+// ============ 阶段C2 掉落物组件 ============
+
+/** 掉落物种类：金币 / 血包 / 临时增益 */
+export type PickupKind = 'coin' | 'heal' | 'buff';
+
+/**
+ * 掉落物：敌人死亡时生成，玩家碰到即拾取。
+ * 无物理刚体、无碰撞形状，仅由 PickupSystem 做圆形拾取判定。
+ */
+export class Pickup {
+  constructor(
+    public kind: PickupKind,
+    /** 数值：金币=金额，血包=回血量，增益=强度倍率（由 BuffDef 解释） */
+    public value: number,
+    /** 存活时间（秒），到期销毁（0 = 永久） */
+    public life: number = 12,
+    /** 增益 id（仅 kind === 'buff' 时有效） */
+    public buffId: string = '',
+    /** 初始向上弹跳速度（视觉：掉落时弹一下） */
+    public vy: number = -160,
+    /** 水平漂移速度（视觉：掉落时散开） */
+    public vx: number = 0,
+  ) {}
+}
+
+/**
+ * 临时增益（玩家身上的计时器）：
+ *   - id 对应 resources/Pickups.ts 的 BUFF_DEFS
+ *   - 重复拾取同一增益 → 刷新计时（不叠加）
+ */
+export class Buff {
+  constructor(
+    public id: string,
+    public duration: number,
+  ) {}
+  /** 剩余时间（秒） */
+  public timer: number = 0;
+}

@@ -1,22 +1,76 @@
 /**
  * 敌人 AI 系统（横版平台）
  *
- * 三种敌人行为（均受重力约束，站在地面/平台上）：
- *  - chaser ：地面巡逻；玩家接近时朝玩家水平移动
- *  - charger：接近后蓄力 → 水平冲锋 → 恢复
- *  - shooter：保持水平距离，周期性朝玩家射击
- *  - flyer  ：无视重力，水平追踪玩家 + 垂直正弦漂浮
+ * 行为由 **AI 状态机**（`GameEngine/ai`）驱动，不再按 EnemyKind 写大 switch：
+ *  - chaser ：PATROL ⇄ CHASE（玩家接近时追击）
+ *  - charger：IDLE → WINDUP → DASH → RECOVER → IDLE
+ *  - shooter：KEEP_DISTANCE（保持水平距离 + 周期射击）
+ *  - flyer  ：FLOAT（无视重力，水平保持距离 + 垂直正弦漂浮）
  *
+ * 状态机是纯函数（吃上下文快照，吐期望水平速度），实体引用只在本系统内处理。
  * 水平速度由 AI 设置；垂直速度由重力（PhysicsSystem）控制（flyer 除外）。
  */
 import { World } from '../../GameEngine/ecs';
 import { Position, Velocity } from '../../GameEngine/ecs/components';
+import {
+  AIState,
+  createRuntime,
+  step,
+  chaserMachine,
+  chargerMachine,
+  shooterMachine,
+  flyerMachine,
+} from '../../GameEngine/ai';
+import type { AIContext, MachineRuntime, StateMachine } from '../../GameEngine/ai';
 import {
   PlayerTag, Chase, Charger, Shooter, Patrol,
   BulletTag, Sprite, Collider, Flying,
 } from '../components';
 
 const CHASE_RANGE = 320; // 玩家进入该范围才追击
+const SHOOTER_IDEAL = 260; // shooter 保持的理想距离
+
+/** 状态机是「配置」而非「状态」：按类型复用同一实例，避免每帧重建导致运行时被重置 */
+const CHASER_SM = chaserMachine(CHASE_RANGE);
+const CHARGER_SM = chargerMachine();
+const SHOOTER_SM = shooterMachine(SHOOTER_IDEAL);
+
+/** 每个实体一份状态机运行时（按实体索引存） */
+const runtimes = new Map<number, { rt: MachineRuntime; sm: StateMachine }>();
+
+/** 取得（或初始化）某实体的状态机运行时 */
+function runtimeFor(idx: number, sm: StateMachine): MachineRuntime {
+  let entry = runtimes.get(idx);
+  if (!entry || entry.sm !== sm) {
+    entry = { rt: createRuntime(sm), sm };
+    runtimes.set(idx, entry);
+  }
+  return entry.rt;
+}
+
+/** 清理已销毁实体的运行时（避免 Map 无限增长） */
+function pruneRuntimes(world: World): void {
+  if (runtimes.size === 0) return;
+  for (const idx of runtimes.keys()) {
+    if (!world.entities.isAliveIndex(idx)) runtimes.delete(idx);
+  }
+}
+
+/** 构造上下文快照 */
+function makeContext(x: number, y: number, playerX: number, playerY: number): AIContext {
+  const dx = playerX - x;
+  const dy = playerY - y;
+  return {
+    x,
+    y,
+    playerX,
+    playerY,
+    dx,
+    dist: Math.hypot(dx, dy),
+    dir: dx > 0 ? 1 : -1,
+    elapsed: 0,
+  };
+}
 
 export const EnemyAISystem = {
   name: 'EnemyAISystem',
@@ -26,7 +80,9 @@ export const EnemyAISystem = {
     const playerPos = world.storage.get(playerIdx, Position);
     if (!playerPos) return;
 
-    // --- chaser：巡逻 + 追击（仅水平） ---
+    pruneRuntimes(world);
+
+    // --- chaser：PATROL ⇄ CHASE ---
     const chases = world.dense(Chase);
     const chaseEntities = world.denseEntities(Chase);
     for (let i = 0; i < chases.length; i++) {
@@ -35,24 +91,22 @@ export const EnemyAISystem = {
       const vel = world.storage.get(idx, Velocity);
       if (!pos || !vel) continue;
 
-      const dist = Math.abs(playerPos.x - pos.x);
+      const rt = runtimeFor(idx, CHASER_SM);
+      const ctx = makeContext(pos.x, pos.y, playerPos.x, playerPos.y);
       const patrol = world.storage.get(idx, Patrol);
-
-      if (dist < CHASE_RANGE) {
-        // 追击：朝玩家水平移动
-        const dir = playerPos.x > pos.x ? 1 : -1;
-        vel.x = dir * chases[i].speed;
-      } else if (patrol) {
-        // 巡逻：在边界间来回
-        vel.x = patrol.dir * patrol.speed;
-        if (pos.x <= patrol.leftBound) patrol.dir = 1;
-        if (pos.x >= patrol.rightBound) patrol.dir = -1;
-      } else {
-        vel.x = 0;
+      if (patrol) {
+        ctx.patrolLeft = patrol.leftBound;
+        ctx.patrolRight = patrol.rightBound;
+        ctx.patrolDir = patrol.dir;
       }
+
+      vel.x = step(CHASER_SM, rt, ctx, chases[i].speed, dt);
+
+      // 写回巡逻方向
+      if (patrol && ctx.patrolDir !== undefined) patrol.dir = ctx.patrolDir as 1 | -1;
     }
 
-    // --- charger：蓄力 → 水平冲锋 → 恢复 ---
+    // --- charger：IDLE → WINDUP → DASH → RECOVER ---
     const chargers = world.dense(Charger);
     const chargerEntities = world.denseEntities(Charger);
     for (let i = 0; i < chargers.length; i++) {
@@ -62,41 +116,23 @@ export const EnemyAISystem = {
       const vel = world.storage.get(idx, Velocity);
       if (!pos || !vel) continue;
 
-      const dx = playerPos.x - pos.x;
-      const dist = Math.abs(dx) + Math.abs(playerPos.y - pos.y);
-      const dir = dx > 0 ? 1 : -1;
+      const rt = runtimeFor(idx, CHARGER_SM);
+      const ctx = makeContext(pos.x, pos.y, playerPos.x, playerPos.y);
 
-      c.timer -= dt;
-      switch (c.state) {
-        case 'idle':
-          vel.x = 0;
-          if (dist < 320) {
-            c.state = 'windup';
-            c.timer = c.windup;
-          }
-          break;
-        case 'windup':
-          vel.x = 0;
-          if (c.timer <= 0) {
-            c.state = 'dash';
-            c.timer = c.dashTime;
-            vel.x = dir * c.dashSpeed;
-          }
-          break;
-        case 'dash':
-          if (c.timer <= 0) {
-            c.state = 'recover';
-            c.timer = 0.5;
-            vel.x = 0;
-          }
-          break;
-        case 'recover':
-          if (c.timer <= 0) c.state = 'idle';
-          break;
-      }
+      // 冲锋速度在 DASH 状态用 dashSpeed，其余为 0
+      const speed = rt.state === AIState.DASH ? c.dashSpeed : 0;
+      vel.x = step(CHARGER_SM, rt, ctx, speed, dt, {
+        windup: c.windup,
+        dashTime: c.dashTime,
+        recover: 0.5,
+      });
+
+      // 状态 → 组件字段同步（保持旧接口 c.state / c.timer 语义）
+      c.state = rt.state as unknown as Charger['state'];
+      c.timer = -rt.elapsed;
     }
 
-    // --- shooter：保持水平距离 + 射击 ---
+    // --- shooter：KEEP_DISTANCE + 射击 ---
     const shooters = world.dense(Shooter);
     const shooterEntities = world.denseEntities(Shooter);
     for (let i = 0; i < shooters.length; i++) {
@@ -106,23 +142,14 @@ export const EnemyAISystem = {
       const vel = world.storage.get(idx, Velocity);
       if (!pos || !vel) continue;
 
-      const dx = playerPos.x - pos.x;
-      const dy = playerPos.y - pos.y;
-      const dist = Math.hypot(dx, dy) || 1;
-      const nx = dx / dist;
-      const ny = dy / dist;
-
-      // 保持水平距离：太近后退，太远前进
-      const ideal = 260;
-      if (dist < ideal - 40) {
-        vel.x = -nx * 60;
-      } else if (dist > ideal + 40) {
-        vel.x = nx * 60;
-      } else {
-        vel.x = 0;
-      }
+      const rt = runtimeFor(idx, SHOOTER_SM);
+      const ctx = makeContext(pos.x, pos.y, playerPos.x, playerPos.y);
+      vel.x = step(SHOOTER_SM, rt, ctx, 60, dt);
 
       // 射击
+      const dist = ctx.dist || 1;
+      const nx = ctx.dx / dist;
+      const ny = (playerPos.y - pos.y) / dist;
       s.timer -= dt;
       if (s.timer <= 0 && dist < s.range) {
         s.timer = s.cooldown;
@@ -135,7 +162,7 @@ export const EnemyAISystem = {
       }
     }
 
-    // --- flyer：无视重力，水平追踪玩家 + 垂直正弦漂浮 ---
+    // --- flyer：FLOAT（水平保持距离 + 垂直正弦漂浮） ---
     const flyers = world.dense(Flying);
     const flyerEntities = world.denseEntities(Flying);
     for (let i = 0; i < flyers.length; i++) {
@@ -145,25 +172,16 @@ export const EnemyAISystem = {
       const vel = world.storage.get(idx, Velocity);
       if (!pos || !vel) continue;
 
-      // 首次运行时记录基准 y（生成高度）
+      const sm = flyerMachine(f.idealDist);
+      const rt = runtimeFor(idx, sm);
+      const ctx = makeContext(pos.x, pos.y, playerPos.x, playerPos.y);
+      vel.x = step(sm, rt, ctx, f.speed, dt);
+
+      // 垂直：正弦漂浮（围绕基准 y），比例控制平滑趋近目标高度
       if (f.baseY === 0) f.baseY = pos.y;
-
-      // 水平：朝玩家靠近，但保持理想距离（太近则后退）
-      const dx = playerPos.x - pos.x;
-      const dist = Math.abs(dx);
-      const dir = dx > 0 ? 1 : -1;
-      if (dist > f.idealDist + 30) {
-        vel.x = dir * f.speed;
-      } else if (dist < f.idealDist - 30) {
-        vel.x = -dir * f.speed;
-      } else {
-        vel.x = 0;
-      }
-
-      // 垂直：正弦漂浮（围绕基准 y），直接设置速度让位置跟随目标
       f.phase += f.frequency * dt;
       const targetY = f.baseY + Math.sin(f.phase) * f.amplitude;
-      vel.y = (targetY - pos.y) * 6; // 比例控制，平滑趋近目标高度
+      vel.y = (targetY - pos.y) * 6;
     }
   },
 };

@@ -2,6 +2,8 @@
  * 游戏状态机
  *
  * MENU      —— 主菜单（开始界面）
+ * SHOP      —— 局外解锁商店
+ * MAP       —— 地图选路（清怪 + 升级后选择下一个节点）
  * PLAYING   —— 游戏中
  * PAUSED    —— 暂停
  * GAMEOVER  —— 结束（死亡）
@@ -10,6 +12,8 @@
  */
 export enum GamePhase {
   MENU = 'menu',
+  SHOP = 'shop',
+  MAP = 'map',
   PLAYING = 'playing',
   PAUSED = 'paused',
   GAMEOVER = 'gameover',
@@ -34,5 +38,10 @@ export class GameStateMachine {
   /** 是否处于「可操作」的游戏进行中状态 */
   isPlaying(): boolean {
     return this.phase === GamePhase.PLAYING;
+  }
+
+  /** 是否处于地图选路状态 */
+  isMapChoosing(): boolean {
+    return this.phase === GamePhase.MAP;
   }
 }
