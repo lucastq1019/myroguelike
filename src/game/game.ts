@@ -11,7 +11,7 @@ import GameEngine from '../GameEngine/GameEngine';
 import { World, Entity } from '../GameEngine/ecs';
 import { Camera } from '../GameEngine/resources/Camera';
 import { Input } from '../GameEngine/resources/Input';
-import { Position, Velocity, Sprite } from '../GameEngine/ecs/components';
+import { Position, Velocity, Sprite, Transform } from '../GameEngine/ecs/components';
 import {
   Health, Collider, PlayerTag, EnemyTag, Portal, Invincible, Knockback,
   RigidBody, dynamicBody, Circle, Facing, Locomotion, JumpState, MeleeAttack, DashState,
@@ -35,6 +35,25 @@ import { PickupSystem, clearBuffs } from './systems/pickup';
 import { generateLevel, spawnPortal } from './systems/level';
 import { createPhysicsSystem } from '../GameEngine/physics';
 import { audio } from './audio';
+import { GameMap, MapNode, MapNodeKind, generateMap } from './resources/MapGraph';
+import {
+  createWorldCodec,
+  SNAPSHOT_VERSION,
+  type WorldSnapshot,
+} from '../GameEngine/ecs/WorldCodec';
+
+/** 本局中途存档（世界实体 + 进度元数据） */
+export interface RunSnapshot {
+  version: number;
+  floor: number;
+  /** 当前地图节点 id（null = 未进入地图） */
+  mapNodeId: number | null;
+  /** 已访问节点 id */
+  visited: number[];
+  bestCombo: number;
+  coins: number;
+  world: WorldSnapshot;
+}
 
 /** 重力加速度（像素/秒²），横版平台向下为正 */
 const GRAVITY_Y = 2000;
@@ -76,12 +95,18 @@ export interface GameState {
   canReroll: boolean;
   /** 跳过升级的回血量 */
   skipHeal: number;
+  /** 当前所在的地图节点类型（HUD 显示层名） */
+  nodeKind: MapNodeKind;
+  /** 当前节点是否是 Boss 层 */
+  isBoss: boolean;
 }
 
 export interface GameCallbacks {
   onStateChange: (state: GameState) => void;
   /** 已解锁项 id 列表（新一局开始时应用） */
   getUnlocked?: () => string[];
+  /** 进入地图选路界面（清空敌人后触发） */
+  onMapChoice?: (map: GameMap, currentNode: MapNode, visited: Set<number>) => void;
 }
 
 export class Game {
@@ -108,6 +133,16 @@ export class Game {
   private paidRerolls = 0;
   /** 本局最高连击（用于结算） */
   private bestCombo = 0;
+
+  // ---- 地图（分支路线）----
+  /** 本局地图 */
+  private map: GameMap | null = null;
+  /** 当前所在节点 */
+  private mapNode: MapNode | null = null;
+  /** 已访问节点 id */
+  private visited = new Set<number>();
+  /** 是否正在等待玩家选路 */
+  private mapChoosing = false;
 
   constructor(callbacks: GameCallbacks) {
     this.callbacks = callbacks;
@@ -203,6 +238,12 @@ export class Game {
     const unlocked = this.callbacks.getUnlocked?.() ?? [];
     if (unlocked.length > 0) applyUnlocks(this.world, p, unlocked);
 
+    // 生成本局地图，从起点开始
+    this.map = generateMap({ layers: 8 });
+    this.mapNode = this.map.startNode;
+    this.visited = new Set<number>([this.mapNode.id]);
+    this.mapChoosing = false;
+
     this.nextFloor();
     this.emitState();
   }
@@ -216,7 +257,12 @@ export class Game {
     this.portalSpawned = false;
     this.portalEntity = null;
 
-    const layout = generateLevel(this.world, this.floor, this.camera.viewportW, this.camera.viewportH);
+    // 按节点类型决定关卡内容（休息层无敌人，宝箱层敌人少）
+    const kind = this.getNodeKind();
+    const layout = generateLevel(this.world, this.floor, this.camera.viewportW, this.camera.viewportH, {
+      enemyScale: kind === 'rest' ? 0 : kind === 'treasure' ? 0.5 : kind === 'boss' ? 2 : 1,
+      elite: kind === 'elite',
+    });
     this.roomW = layout.width;
     this.roomH = layout.height;
 
@@ -284,7 +330,7 @@ export class Game {
       this.portalEntity = spawnPortal(this.world, this.roomW - 100, this.roomH - 100);
     }
 
-    // 玩家碰到传送门 → 升级 → 下一层
+    // 玩家碰到传送门 → 升级 → 选路 → 下一层
     if (this.portalEntity && this.playerEntity) {
       const pPos = this.world.getComponent(this.playerEntity, Position);
       const portalPos = this.world.getComponent(this.portalEntity, Position);
@@ -296,7 +342,6 @@ export class Game {
         }
       }
     }
-
     // 连击超时递减
     if (this.playerEntity) {
       const combo = this.world.getComponent(this.playerEntity, ComboCounter);
@@ -323,6 +368,153 @@ export class Game {
     this.freeRerolls = REROLL_FREE_PER_FLOOR;
     this.paidRerolls = 0;
     this.emitState();
+  }
+
+  // ============ 地图（分支路线） ============
+
+  /** 当前地图（供地图界面渲染） */
+  getMap(): GameMap | null {
+    return this.map;
+  }
+
+  /** 当前所在节点 */
+  getMapNode(): MapNode | null {
+    return this.mapNode;
+  }
+
+  /** 已访问节点 id 集合 */
+  getVisited(): Set<number> {
+    return this.visited;
+  }
+
+  /** 是否正在等待玩家选路 */
+  isMapChoosing(): boolean {
+    return this.mapChoosing;
+  }
+
+  /** 当前节点可选的下一批节点 */
+  getReachableNodes(): MapNode[] {
+    return this.mapNode ? this.mapNode.next : [];
+  }
+
+  /** 当前节点类型（HUD 显示用） */
+  getNodeKind(): MapNodeKind {
+    return this.mapNode?.kind ?? 'battle';
+  }
+
+  /**
+   * 选择下一个节点并进入该层。
+   * 只有当前节点的**直接后继**可选（非法选择返回 false）。
+   */
+  chooseNode(nodeId: number): boolean {
+    if (!this.map || !this.mapNode) return false;
+    const target = this.map.get(nodeId);
+    if (!target) return false;
+    if (!this.mapNode.canReach(target)) return false;
+
+    this.mapNode = target;
+    this.visited.add(target.id);
+    this.mapChoosing = false;
+    this.nextFloor();
+    this.emitState();
+    return true;
+  }
+
+  /** 进入选路界面（清空敌人 + 升完级之后调用） */
+  private enterMapChoice(): void {
+    // 已到终点（Boss 层）→ 通关
+    if (!this.map || !this.mapNode || this.mapNode.next.length === 0) {
+      this.mapChoosing = false;
+      this.emitState();
+      return;
+    }
+    this.mapChoosing = true;
+    this.callbacks.onMapChoice?.(this.map, this.mapNode, this.visited);
+    this.emitState();
+  }
+
+  /** 清空敌人后：升级 → 选路 → 下一层（统一出口） */
+  private advanceAfterClear(): void {
+    this.enterUpgrade();
+    // 升级面板关闭时（chooseUpgrade/skipUpgrade）会调用 enterMapChoice
+  }
+
+  // ============ 中途存档（实体状态序列化） ============
+
+  /** 构建世界编解码器（注册需要存档的组件） */
+  private buildCodec() {
+    return createWorldCodec()
+      .register(Position, 'position')
+      .register(Velocity, 'velocity')
+      .register(Health, 'health')
+      .register(Transform, 'transform')
+      .register(Collider, 'collider')
+      .register(RigidBody, 'rigidBody')
+      .register(ComboCounter, 'comboCounter')
+      .register(Weapon, 'weapon')
+      .register(Lifesteal, 'lifesteal')
+      .register(CritChance, 'critChance')
+      .register(PlayerTag, 'playerTag');
+  }
+
+  /**
+   * 导出本局存档（世界实体 + 进度元数据）。
+   * 只序列化注册过的组件（表现层 Sprite 等不入档）。
+   */
+  exportRun(): RunSnapshot {
+    const codec = this.buildCodec();
+    const playerMask = this.world.maskOf(PlayerTag);
+    const world = codec.serialize(this.world, { playerMask });
+    return {
+      version: SNAPSHOT_VERSION,
+      floor: this.floor,
+      mapNodeId: this.mapNode?.id ?? null,
+      visited: [...this.visited],
+      bestCombo: this.bestCombo,
+      coins: (globalThis as any).__coins ?? 0,
+      world,
+    };
+  }
+
+  /** 从存档恢复本局（清空世界后重建实体 + 进度） */
+  importRun(snapshot: RunSnapshot): boolean {
+    if (!snapshot || !snapshot.world) return false;
+    const codec = this.buildCodec();
+
+    // 恢复进度元数据
+    this.floor = snapshot.floor ?? 0;
+    this.bestCombo = snapshot.bestCombo ?? 0;
+    (globalThis as any).__coins = snapshot.coins ?? 0;
+    this.gameOver = false;
+    this.upgradeChoosing = false;
+    this.upgradeOptions = [];
+    this.mapChoosing = false;
+    this.portalSpawned = false;
+    this.portalEntity = null;
+
+    // 重建地图（保持同一张图）
+    this.map = generateMap({ layers: 8 });
+    this.mapNode = snapshot.mapNodeId !== null ? this.map.get(snapshot.mapNodeId) ?? this.map.startNode : this.map.startNode;
+    this.visited = new Set(snapshot.visited ?? [this.mapNode.id]);
+
+    // 清空世界并恢复实体
+    resetFxPool();
+    clearBuffs(this.world);
+    codec.loadInto(this.world, snapshot.world);
+
+    // 重新定位玩家实体引用
+    this.playerEntity = null;
+    const playerIdx = this.world.findEntities(this.world.query().with(this.world.maskOf(PlayerTag)).build())[0];
+    if (playerIdx !== undefined) {
+      this.playerEntity = this.world.getByIndex(playerIdx) ?? null;
+    }
+
+    // 恢复关卡尺寸（相机边界）
+    this.roomW = this.camera.worldW;
+    this.roomH = this.camera.worldH;
+
+    this.emitState();
+    return this.playerEntity !== null;
   }
 
   /** 当前刷新消耗（0 = 免费） */
@@ -366,7 +558,7 @@ export class Game {
     audio.play('pickup');
     this.upgradeChoosing = false;
     this.upgradeOptions = [];
-    this.nextFloor();
+    this.enterMapChoice();
     this.emitState();
     return true;
   }
@@ -380,7 +572,7 @@ export class Game {
     }
     this.upgradeChoosing = false;
     this.upgradeOptions = [];
-    this.nextFloor();
+    this.enterMapChoice();
     this.emitState();
   }
 
@@ -434,6 +626,8 @@ export class Game {
       rerollCost: cost,
       canReroll: cost === 0 || coins >= cost,
       skipHeal: Math.round(maxHp * SKIP_HEAL_RATIO),
+      nodeKind: this.getNodeKind(),
+      isBoss: this.getNodeKind() === 'boss',
     });
   }
 

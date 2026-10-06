@@ -118,3 +118,57 @@ export function clearSave(): void {
     }
   }
 }
+
+// ============ 中途存档（本局进行中的世界状态） ============
+// 与上面的元进度分开存储：元进度跨局保留；中途存档只保留「当前这一局」。
+
+const RUN_KEY = 'mygame.run.v1';
+
+/** 内存降级（无 localStorage 时） */
+let memoryRun: string | null = null;
+
+/** 写入中途存档（JSON 字符串） */
+export function writeRunSave(json: string): void {
+  if (!hasLocalStorage()) {
+    memoryRun = json;
+    return;
+  }
+  try {
+    localStorage.setItem(RUN_KEY, json);
+  } catch {
+    memoryRun = json;
+  }
+}
+
+/** 读取中途存档（无则返回 null） */
+export function loadRunSave(): string | null {
+  if (!hasLocalStorage()) return memoryRun;
+  try {
+    return localStorage.getItem(RUN_KEY);
+  } catch {
+    return memoryRun;
+  }
+}
+
+/** 是否存在中途存档 */
+export function hasRunSave(): boolean {
+  return loadRunSave() !== null;
+}
+
+/** 清除中途存档（死亡 / 通关 / 主动放弃时调用） */
+export function clearRunSave(): void {
+  memoryRun = null;
+  if (hasLocalStorage()) {
+    try {
+      localStorage.removeItem(RUN_KEY);
+    } catch {
+      /* ignore */
+    }
+  }
+}
+
+/** 清空全部（元进度 + 中途存档，调试用） */
+export function clearAll(): void {
+  clearSave();
+  clearRunSave();
+}

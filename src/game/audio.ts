@@ -101,6 +101,104 @@ export class AudioManager {
       /* 忽略音频错误，不影响游戏 */
     }
   }
+
+  // ============ 音频资源（按 id 播放音频文件） ============
+  // 移植自旧 GameEngine 的 `engines/AudioEngine`（registerAudioSource + playAudio(id)）：
+  // 支持加载音频文件（AudioBuffer）并按 id 播放；无 AudioContext 时静默降级。
+
+  /** 已加载的音频资源：id → AudioBuffer */
+  private buffers = new Map<string, AudioBuffer>();
+  /** 正在播放的循环音源：id → AudioBufferSourceNode */
+  private loops = new Map<string, AudioBufferSourceNode>();
+
+  /**
+   * 注册一个已解码的音频缓冲。
+   * 测试环境可直接注入，无需真实解码。
+   */
+  registerBuffer(id: string, buffer: AudioBuffer): void {
+    this.buffers.set(id, buffer);
+  }
+
+  /**
+   * 从 URL 加载音频文件并注册为 id。
+   * 无 AudioContext / fetch 失败时返回 false（静默降级，不抛错）。
+   */
+  async load(id: string, url: string): Promise<boolean> {
+    const ctx = this.ensureCtx();
+    if (!ctx) return false;
+    try {
+      const res = await fetch(url);
+      if (!res.ok) return false;
+      const arr = await res.arrayBuffer();
+      const buf = await ctx.decodeAudioData(arr);
+      this.buffers.set(id, buf);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /** 是否已加载某音频资源 */
+  has(id: string): boolean {
+    return this.buffers.has(id);
+  }
+
+  /** 已加载的音频 id 列表 */
+  loadedIds(): string[] {
+    return [...this.buffers.keys()];
+  }
+
+  /**
+   * 按 id 播放音频资源。
+   * @param volume 相对音量（0~1，默认 1）
+   * @param loop   是否循环（循环音源可用 stopLoop 停止）
+   * @returns 是否成功播放
+   */
+  playResource(id: string, volume = 1, loop = false): boolean {
+    const ctx = this.ensureCtx();
+    if (!ctx) return false;
+    const buf = this.buffers.get(id);
+    if (!buf) return false;
+
+    try {
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      src.loop = loop;
+      const gain = ctx.createGain();
+      gain.gain.value = Math.max(0, Math.min(1, volume)) * this.masterVolume;
+      src.connect(gain);
+      gain.connect(ctx.destination);
+      src.start();
+      if (loop) this.loops.set(id, src);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /** 停止某个循环音源 */
+  stopLoop(id: string): boolean {
+    const src = this.loops.get(id);
+    if (!src) return false;
+    try {
+      src.stop();
+    } catch {
+      /* 已停止 */
+    }
+    this.loops.delete(id);
+    return true;
+  }
+
+  /** 停止所有循环音源 */
+  stopAllLoops(): void {
+    for (const id of [...this.loops.keys()]) this.stopLoop(id);
+  }
+
+  /** 清空已加载资源（测试/切场景用） */
+  clearResources(): void {
+    this.stopAllLoops();
+    this.buffers.clear();
+  }
 }
 
 /** 全局音效管理器（单例） */

@@ -9,8 +9,9 @@ import { createRenderSystem } from '../GameEngine/renderer/RenderSystem';
 import { createMinimapSystem } from './systems/minimap';
 import { createHudSystem } from './systems/hud';
 import { createScreenSystem } from './systems/screen';
+import { createMapScreenSystem } from './systems/mapScreen';
 import { GamePhase, GameStateMachine } from './state';
-import { loadSave, recordRun, unlockItem, SaveData } from './save';
+import { loadSave, recordRun, unlockItem, SaveData, writeRunSave, loadRunSave, clearRunSave, hasRunSave } from './save';
 import { getUnlockDef } from './resources/Unlocks';
 import { audio } from './audio';
 import { Game, GameState } from './game';
@@ -45,11 +46,48 @@ const game = new Game({
         soulsGained = res.soulsGained;
         runRecorded = true;
       }
+      // 死亡：清除中途存档（本局结束）
+      clearRunSave();
     }
   },
   // 新一局应用局外解锁
   getUnlocked: () => saveData.unlocked,
+  // 清怪 + 升级完毕 → 进入地图选路
+  onMapChoice: () => {
+    fsm.set(GamePhase.MAP);
+    // 进入新一层：自动保存中途存档
+    saveRun();
+  },
 });
+
+// ---- 中途存档（本局进行中的世界状态） ----
+function saveRun(): void {
+  try {
+    writeRunSave(JSON.stringify(game.exportRun()));
+  } catch {
+    /* 存档失败不影响游戏 */
+  }
+}
+
+/** 尝试恢复中途存档（返回是否成功） */
+function restoreRun(): boolean {
+  const json = loadRunSave();
+  if (!json) return false;
+  let snap: any;
+  try {
+    snap = JSON.parse(json);
+  } catch {
+    clearRunSave();
+    return false;
+  }
+  if (!snap || !snap.world) {
+    clearRunSave();
+    return false;
+  }
+  const ok = game.importRun(snap);
+  if (!ok) clearRunSave();
+  return ok;
+}
 
 // ---- 渲染系统（装饰器集中在 render/decorators.ts） ----
 engine.addSystem(
@@ -84,6 +122,23 @@ engine.addSystem({
       save: saveData,
       isNewBest,
       soulsGained,
+      hasRunSave: hasRunSave(),
+    });
+  },
+});
+
+// ---- 地图选路（画布内绘制，必须在 RenderSystem 之后） ----
+const mapScreenSystem = createMapScreenSystem(engine.canvasManager);
+engine.addSystem({
+  name: 'MapScreenSystem',
+  run: (_world, dt) => {
+    if (!fsm.isMapChoosing()) return;
+    const map = game.getMap();
+    if (!map) return;
+    mapScreenSystem.run(_world, dt, {
+      map,
+      currentNode: game.getMapNode(),
+      visited: game.getVisited(),
     });
   },
 });
@@ -106,6 +161,20 @@ function startRun(): void {
   audio.unlock();
 }
 
+/** 继续上一局（有中途存档时） */
+function continueRun(): void {
+  runRecorded = false;
+  isNewBest = false;
+  soulsGained = 0;
+  if (restoreRun()) {
+    fsm.set(GamePhase.PLAYING);
+  } else {
+    startRun();
+    return;
+  }
+  audio.unlock();
+}
+
 const canvas = engine.canvasManager.getCanvas();
 if (canvas) {
   canvas.addEventListener('click', (e: MouseEvent) => {
@@ -114,45 +183,51 @@ if (canvas) {
     const mx = e.clientX - rect.left;
     const my = e.clientY - rect.top;
 
-    // 界面按钮
-    for (const b of screenSystem.getButtons()) {
-      if (mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h) {
-        if (b.id === 'start' || b.id === 'restart') startRun();
-        else if (b.id === 'resume') fsm.set(GamePhase.PLAYING);
-        else if (b.id === 'menu') fsm.set(GamePhase.MENU);
-        else if (b.id === 'shop') fsm.set(GamePhase.SHOP);
-        else if (b.id === 'back') fsm.set(GamePhase.MENU);
-        else if (b.id.startsWith('unlock:')) {
-          // 购买解锁项
-          const uid = b.id.slice('unlock:'.length);
-          const def = getUnlockDef(uid);
-          if (def) {
-            const next = unlockItem(uid, def.cost);
-            if (next) {
-              saveData = next;
-              audio.play('unlock');
-            }
-          }
-        }
-        return;
+    // 地图选路：点击可达节点前进
+    if (fsm.isMapChoosing()) {
+      const node = mapScreenSystem.hitNode(mx, my);
+      if (node) {
+        game.chooseNode(node.id);
+        audio.play('upgrade');
       }
+      return;
     }
 
-    // 升级卡片
-    if (fsm.is(GamePhase.PLAYING) && currentState?.upgradeChoosing) {
-      for (const c of hudSystem.getUpgradeCardRects()) {
-        if (mx >= c.x && mx <= c.x + c.w && my >= c.y && my <= c.y + c.h) {
-          game.chooseUpgrade(c.index);
-          return;
+    // 界面按钮（UI 层统一命中检测）
+    const hitBtn = screenSystem.getUi().hit(mx, my);
+    if (hitBtn) {
+      const id = hitBtn.id;
+      if (id === 'start' || id === 'restart') startRun();
+      else if (id === 'continue') continueRun();
+      else if (id === 'resume') fsm.set(GamePhase.PLAYING);
+      else if (id === 'menu') fsm.set(GamePhase.MENU);
+      else if (id === 'shop') fsm.set(GamePhase.SHOP);
+      else if (id === 'back') fsm.set(GamePhase.MENU);
+      else if (id.startsWith('unlock:')) {
+        // 购买解锁项
+        const uid = id.slice('unlock:'.length);
+        const def = getUnlockDef(uid);
+        if (def) {
+          const next = unlockItem(uid, def.cost);
+          if (next) {
+            saveData = next;
+            audio.play('unlock');
+          }
         }
       }
-      // 升级面板按钮（刷新 / 跳过）
-      for (const b of hudSystem.getPanelButtons()) {
-        if (mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h) {
-          if (!b.enabled) return;
-          if (b.id === 'reroll') game.rerollUpgrade();
-          else if (b.id === 'skip') game.skipUpgrade();
-          return;
+      return;
+    }
+
+    // 升级卡片 / 面板按钮（UI 层统一命中检测）
+    if (fsm.is(GamePhase.PLAYING) && currentState?.upgradeChoosing) {
+      const hit = hudSystem.getUi().hit(mx, my);
+      if (hit) {
+        if (hit.id.startsWith('card:')) {
+          game.chooseUpgrade(Number(hit.id.slice(5)));
+        } else if (hit.id === 'reroll') {
+          game.rerollUpgrade();
+        } else if (hit.id === 'skip') {
+          game.skipUpgrade();
         }
       }
     }
@@ -170,9 +245,10 @@ window.addEventListener('keydown', (e) => {
     return;
   }
 
-  // Enter：主菜单开始
+  // Enter：主菜单开始（有中途存档则继续）
   if (k === 'enter' && fsm.is(GamePhase.MENU)) {
-    startRun();
+    if (hasRunSave()) continueRun();
+    else startRun();
     return;
   }
 

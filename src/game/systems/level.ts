@@ -25,7 +25,22 @@ export interface LevelLayout {
 }
 
 /** 生成横版关卡（返回布局） */
-export function generateLevel(world: World, floor: number, viewportW: number, viewportH: number): LevelLayout {
+export interface LevelOptions {
+  /** 敌人数量倍率（0 = 无敌人；休息层用） */
+  enemyScale?: number;
+  /** 是否精英层（敌人更强） */
+  elite?: boolean;
+}
+
+export function generateLevel(
+  world: World,
+  floor: number,
+  viewportW: number,
+  viewportH: number,
+  opts: LevelOptions = {},
+): LevelLayout {
+  const enemyScale = opts.enemyScale ?? 1;
+  const elite = opts.elite ?? false;
   // 关卡比视口宽 2~3 倍，实现横向卷轴
   const width = Math.round(viewportW * (2 + Math.random() * 1));
   const height = viewportH;
@@ -70,19 +85,26 @@ export function generateLevel(world: World, floor: number, viewportW: number, vi
   }
 
   // --- 敌人 ---
-  const enemyCount = 3 + floor;
+  const enemyCount = Math.round((3 + floor) * enemyScale);
   for (let i = 0; i < enemyCount; i++) {
     const ex = 200 + Math.random() * (width - 400);
     // 站在地面或随机平台上
     const ey = groundY - 30;
-    spawnEnemy(world, floor, ex, ey, groundY);
+    spawnEnemy(world, floor, ex, ey, groundY, elite);
   }
 
   return { width, height, groundY };
 }
 
 /** 生成一个敌人（种类随层数解锁） */
-export function spawnEnemy(world: World, floor: number, x: number, y: number, groundY: number): Entity {
+export function spawnEnemy(
+  world: World,
+  floor: number,
+  x: number,
+  y: number,
+  groundY: number,
+  elite = false,
+): Entity {
   const roll = Math.random();
   let kind: EnemyKind = 'chaser';
   if (floor >= 2 && roll < 0.35) kind = 'charger';
@@ -145,6 +167,24 @@ export function spawnEnemy(world: World, floor: number, x: number, y: number, gr
     world.addComponent(e, Shooter, new Shooter(1.6, 380, 300, 8));
     world.addComponent(e, RigidBody, dynamicBody(1, 0.0, 0.6, 1));
     world.addComponent(e, Circle, new Circle(11));
+  }
+
+  // 精英层：血量 / 伤害 / 体型放大，颜色改为金色
+  if (elite) {
+    const hp = world.getComponent(e, Health);
+    if (hp) {
+      hp.max = Math.round(hp.max * 2);
+      hp.current = hp.max;
+    }
+    const dmg = world.getComponent(e, ContactDamage);
+    if (dmg) dmg.damage *= 1.5;
+    const sprite = world.getComponent(e, Sprite);
+    if (sprite) {
+      sprite.size = Math.round(sprite.size * 1.35);
+      sprite.color = '#e5c07b';
+    }
+    const col = world.getComponent(e, Collider);
+    if (col) col.radius = Math.round(col.radius * 1.35);
   }
 
   return e;

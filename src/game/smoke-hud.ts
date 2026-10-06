@@ -34,6 +34,8 @@ const normalState: GameState = {
   rerollCost: 0,
   canReroll: true,
   skipHeal: 25,
+  nodeKind: 'battle',
+  isBoss: false,
 };
 calls.length = 0;
 hud.run(null, 1 / 60, normalState);
@@ -64,6 +66,8 @@ const upgradeState: GameState = {
   rerollCost: 0,
   canReroll: true,
   skipHeal: 25,
+  nodeKind: 'battle',
+  isBoss: false,
 };
 calls.length = 0;
 hud.run(null, 1 / 60, upgradeState);

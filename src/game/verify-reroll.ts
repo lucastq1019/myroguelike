@@ -139,7 +139,15 @@ console.log('\n=== 6. 跳过回血 ===');
   check('跳过成功', ok);
   check(`回血 40 → ${40 + expectedHeal}（实际 ${hp.current}）`, hp.current === 40 + expectedHeal);
   check('退出升级态', !lastState.upgradeChoosing);
-  check(`进入下一层（${floorBefore} → ${lastState.floor}）`, lastState.floor === floorBefore + 1);
+  // 地图流程：升级完毕 → 选路（层数在 chooseNode 时才 +1）
+  check('进入选路状态', game.isMapChoosing());
+  check(`层数暂不变（${floorBefore} → ${lastState.floor}）`, lastState.floor === floorBefore);
+  const reachable = game.getReachableNodes();
+  check('有可达节点', reachable.length > 0);
+  const advanced = game.chooseNode(reachable[0].id);
+  check('选路成功', advanced);
+  check(`选路后进入下一层（${floorBefore} → ${lastState.floor}）`, lastState.floor === floorBefore + 1);
+  check('退出选路状态', !game.isMapChoosing());
 }
 
 // ============ 7. 跳过回血不超上限 ============
@@ -161,6 +169,9 @@ console.log('\n=== 7. 回血上限 ===');
   hp.current = hp.max - 5; // 接近满血
   game.skipUpgrade();
   check(`满血附近跳过不超上限（${hp.current}/${hp.max}）`, hp.current === hp.max);
+  // 选路推进，为下一段测试准备
+  const reachable = game.getReachableNodes();
+  if (reachable.length > 0) game.chooseNode(reachable[0].id);
 }
 
 // ============ 8. 新层重置免费刷新 ============
