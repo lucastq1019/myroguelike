@@ -22,6 +22,35 @@ const meleeBuf: number[] = [];
 const enemyBuf: number[] = [];
 const playerBuf: number[] = [];
 
+/**
+ * 暴击判定：按玩家 CritChance 决定是否暴击。
+ * 暴击造成双倍伤害。返回最终伤害与是否暴击。
+ */
+function rollCrit(
+  world: World,
+  playerIdx: number | undefined,
+  baseDamage: number,
+): { dmg: number; isCrit: boolean } {
+  const crit = playerIdx !== undefined ? world.storage.get(playerIdx, CritChance) : undefined;
+  const isCrit = crit !== undefined && crit.chance > 0 && Math.random() < crit.chance;
+  return { dmg: isCrit ? baseDamage * 2 : baseDamage, isCrit };
+}
+
+/** 吸血：玩家命中敌人后按 Lifesteal.perHit 回复生命（不超过上限） */
+function applyLifesteal(world: World, playerIdx: number | undefined): void {
+  if (playerIdx === undefined) return;
+  const ls = world.storage.get(playerIdx, Lifesteal);
+  const pHp = world.storage.get(playerIdx, Health);
+  if (ls && ls.perHit > 0 && pHp) {
+    pHp.current = Math.min(pHp.max, pHp.current + ls.perHit);
+  }
+}
+
+/** 命中颜色：暴击红字，普通黄字 */
+function hitColor(isCrit: boolean): string {
+  return isCrit ? '#ff5f5f' : '#ffd166';
+}
+
 export const CollisionSystem = {
   name: 'CollisionSystem',
   run(world: World): void {
@@ -69,20 +98,11 @@ export const CollisionSystem = {
           const dist = Math.hypot(bPos.x - ePos.x, bPos.y - ePos.y);
           if (dist < bCol.radius + eCol.radius) {
             // 暴击判定（玩家子弹）
-            const crit = playerIdx !== undefined ? world.storage.get(playerIdx, CritChance) : undefined;
-            const isCrit = crit !== undefined && crit.chance > 0 && Math.random() < crit.chance;
-            const dmg = isCrit ? bullet.damage * 2 : bullet.damage;
+            const { dmg, isCrit } = rollCrit(world, playerIdx, bullet.damage);
 
             applyDamage(world, ei, dmg);
-            spawnDamageNumber(world, ePos.x, ePos.y - eCol.radius - 6, dmg, isCrit ? '#ff5f5f' : '#ffd166');
-            // 吸血（子弹命中）
-            if (playerIdx !== undefined) {
-              const ls = world.storage.get(playerIdx, Lifesteal);
-              const pHp = world.storage.get(playerIdx, Health);
-              if (ls && ls.perHit > 0 && pHp) {
-                pHp.current = Math.min(pHp.max, pHp.current + ls.perHit);
-              }
-            }
+            spawnDamageNumber(world, ePos.x, ePos.y - eCol.radius - 6, dmg, hitColor(isCrit));
+            applyLifesteal(world, playerIdx);
             // 击退敌人
             const dx = ePos.x - bPos.x;
             const dy = ePos.y - bPos.y;
@@ -113,27 +133,20 @@ export const CollisionSystem = {
         const dist = Math.hypot(mPos.x - ePos.x, mPos.y - ePos.y);
         if (dist < mCol.radius + eCol.radius) {
           // 暴击判定（玩家近战）：暴击双倍伤害
-          const crit = playerIdx !== undefined ? world.storage.get(playerIdx, CritChance) : undefined;
-          const isCrit = crit !== undefined && crit.chance > 0 && Math.random() < crit.chance;
-          const dmg = isCrit ? hitbox.damage * 2 : hitbox.damage;
+          const { dmg, isCrit } = rollCrit(world, playerIdx, hitbox.damage);
+          const color = hitColor(isCrit);
 
           if (applyDamage(world, ei, dmg)) {
             hitAny = true;
             // 伤害飘字 + 命中冲击波（命中点取敌人位置）
-            spawnDamageNumber(world, ePos.x, ePos.y - eCol.radius - 6, dmg, isCrit ? '#ff5f5f' : '#ffd166');
-            spawnHitSpark(world, (mPos.x + ePos.x) / 2, (mPos.y + ePos.y) / 2, isCrit ? '#ff5f5f' : '#ffd166', isCrit ? 1.4 : 1);
+            spawnDamageNumber(world, ePos.x, ePos.y - eCol.radius - 6, dmg, color);
+            spawnHitSpark(world, (mPos.x + ePos.x) / 2, (mPos.y + ePos.y) / 2, color, isCrit ? 1.4 : 1);
             audio.play('hit');
             // 屏幕震动（命中越重越强）
             const cam = world.getResource(Camera);
             if (cam) cam.shake(3 + Math.min(4, dmg / 15), 0.12);
             // 吸血：命中回复生命
-            if (playerIdx !== undefined) {
-              const ls = world.storage.get(playerIdx, Lifesteal);
-              const pHp = world.storage.get(playerIdx, Health);
-              if (ls && ls.perHit > 0 && pHp) {
-                pHp.current = Math.min(pHp.max, pHp.current + ls.perHit);
-              }
-            }
+            applyLifesteal(world, playerIdx);
             // 击杀爆裂
             const hp = world.storage.get(ei, Health);
             if (hp && hp.current <= 0) {

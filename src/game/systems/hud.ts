@@ -31,6 +31,28 @@ export interface CardRect {
 /** 提示文字 */
 const TIP = 'A/D 移动 · K 跳跃(二段跳) · J 挥砍 · U 射击 · L 冲刺 · S+K 下穿 · 贴墙 K 蹬墙跳 · 1/2/3 选升级 · R 重开';
 
+// ============ 布局常量（画布内 HUD） ============
+/** 顶部 HUD 条高度 */
+const BAR_H = 34;
+/** 血条位置与尺寸 */
+const HP_X = 14;
+const HP_Y = 10;
+const HP_W = 180;
+const HP_H = 14;
+/** 血条右侧信息（层数 / 剩余敌人）的间距 */
+const INFO_GAP = 20;
+const INFO_ENEMY_DX = 110;
+/** 右上角为小地图预留的宽度（连击/连招右对齐起点） */
+const RIGHT_RESERVE = 240;
+const RIGHT_STAGE_DX = 100;
+/** 升级卡片尺寸与间距 */
+const CARD_W = 200;
+const CARD_H = 130;
+const CARD_GAP = 24;
+/** 升级面板标题相对画布中心的纵向偏移 */
+const TITLE_DY = -110;
+const CARD_DY = -60;
+
 export function createHudSystem(
   canvasManager: { getCtx: () => CanvasRenderingContext2D | null; width: number; height: number },
 ) {
@@ -57,16 +79,16 @@ export function createHudSystem(
       ctx.textAlign = 'left';
 
       // ============ 顶部 HUD 条 ============
-      const barH = 34;
+      const barH = BAR_H;
       ctx.globalAlpha = 1;
       ctx.fillStyle = 'rgba(10, 14, 20, 0.72)';
       ctx.fillRect(0, 0, W, barH);
 
       // --- 血条 ---
-      const hpX = 14;
-      const hpY = 10;
-      const hpW = 180;
-      const hpH = 14;
+      const hpX = HP_X;
+      const hpY = HP_Y;
+      const hpW = HP_W;
+      const hpH = HP_H;
       const hpRatio = state.maxHp > 0 ? Math.max(0, Math.min(1, state.hp / state.maxHp)) : 0;
 
       // 血条底
@@ -89,17 +111,17 @@ export function createHudSystem(
       ctx.textAlign = 'left';
       ctx.font = '13px ui-monospace, monospace';
       ctx.fillStyle = '#d4d4d4';
-      const infoX = hpX + hpW + 20;
+      const infoX = hpX + hpW + INFO_GAP;
       ctx.fillText(`第 ${state.floor} 层`, infoX, barH / 2);
-      ctx.fillText(`剩余 ${state.enemiesLeft}`, infoX + 110, barH / 2);
+      ctx.fillText(`剩余 ${state.enemiesLeft}`, infoX + INFO_ENEMY_DX, barH / 2);
 
       // --- 连击 / 连招 ---
       ctx.textAlign = 'right';
-      let rightX = W - 240; // 给右上角小地图留空间
+      let rightX = W - RIGHT_RESERVE; // 给右上角小地图留空间
       if (state.comboStage > 0) {
         ctx.fillStyle = '#ff8c42';
         ctx.fillText(`连招 ${state.comboStage}/3`, rightX, barH / 2);
-        rightX -= 100;
+        rightX -= RIGHT_STAGE_DX;
       }
       if (state.combo > 1) {
         ctx.fillStyle = '#ffd166';
@@ -137,15 +159,15 @@ export function createHudSystem(
         ctx.textAlign = 'center';
         ctx.fillStyle = '#4ec9b0';
         ctx.font = 'bold 22px ui-monospace, monospace';
-        ctx.fillText('选择升级', W / 2, H / 2 - 110);
+        ctx.fillText('选择升级', W / 2, H / 2 + TITLE_DY);
 
-        const cardW = 200;
-        const cardH = 130;
-        const gap = 24;
+        const cardW = CARD_W;
+        const cardH = CARD_H;
+        const gap = CARD_GAP;
         const n = state.upgradeOptions.length;
         const totalW = n * cardW + (n - 1) * gap;
         const startX = (W - totalW) / 2;
-        const cardY = H / 2 - 60;
+        const cardY = H / 2 + CARD_DY;
 
         state.upgradeOptions.forEach((u, i) => {
           const cx = startX + i * (cardW + gap);
